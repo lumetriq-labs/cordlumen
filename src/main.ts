@@ -11,6 +11,8 @@ const timingsEl = $<HTMLTableElement>("timings");
 
 const DISPLAY_W = 1600;
 
+$("build").textContent = `${__BUILD_ID__} · ${__BUILD_TIME__}`;
+
 let segmenter: Promise<{ seg: Segmenter; ms: number }> | null = null;
 
 function getSegmenter() {

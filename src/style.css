@@ -72,6 +72,16 @@ canvas {
   border-radius: 8px;
 }
 
+.build {
+  position: fixed;
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(6px, env(safe-area-inset-bottom));
+  font-size: 0.7rem;
+  color: #777;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
 .timings {
   margin-top: 12px;
   font-size: 0.85rem;
