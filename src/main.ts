@@ -24,15 +24,23 @@ function getSegmenter() {
   return segmenter;
 }
 
+const params = new URLSearchParams(location.search);
+// Long side the photo is reduced to before analysis. Full-size photos run out of memory on iPhone.
+const MAX_SIDE = Number(params.get("max")) || 2016;
+
 async function readImage(file: Blob): Promise<ImageData> {
   const bmp = await createImageBitmap(file);
+  const s = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
   const c = document.createElement("canvas");
-  c.width = bmp.width;
-  c.height = bmp.height;
+  c.width = Math.round(bmp.width * s);
+  c.height = Math.round(bmp.height * s);
   const ctx = c.getContext("2d")!;
-  ctx.drawImage(bmp, 0, 0);
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bmp, 0, 0, c.width, c.height);
   bmp.close();
-  return ctx.getImageData(0, 0, c.width, c.height);
+  const data = ctx.getImageData(0, 0, c.width, c.height);
+  c.width = c.height = 0;
+  return data;
 }
 
 function showTimings(rows: [string, string][]) {
@@ -65,9 +73,8 @@ async function run(file: Blob) {
 
     status.textContent = "モデルを準備中…";
     const { seg, ms: loadMs } = await getSegmenter();
-    status.textContent = "判定中…";
     const t = performance.now();
-    const r = await analyze(image, seg);
+    const r = await analyze(image, seg, (label) => (status.textContent = label));
     const total = performance.now() - t;
 
     showTimings([
@@ -77,7 +84,7 @@ async function run(file: Blob) {
       ["画像の解析（SlimSAM）", sec(r.timings.encode)],
       ["ポストの切り抜き", sec(r.timings.posts)],
       ["判定の合計", sec(total)],
-      ["写真のサイズ", `${image.width} × ${image.height}`],
+      ["解析したサイズ", `${image.width} × ${image.height}`],
     ]);
 
     if (!r.ok) {
@@ -110,7 +117,7 @@ fileInput.addEventListener("change", () => {
 });
 
 // ?src=<image URL> analyzes that image on load (for checking on a device without picking a file).
-const src = new URLSearchParams(location.search).get("src");
+const src = params.get("src");
 if (src) {
   fetch(src)
     .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(`${r.status} ${src}`))))

@@ -53,7 +53,12 @@ export async function embed(seg: Segmenter, image: ImageData): Promise<Embedded>
   const raw = new RawImage(image.data, image.width, image.height, 4).rgb();
   const inputs = await seg.processor(raw);
   const emb = await seg.model.get_image_embeddings(inputs);
+  inputs.pixel_values.dispose();
   return { seg, emb, reshaped: inputs.reshaped_input_sizes[0], W: image.width, H: image.height };
+}
+
+export function release(e: Embedded) {
+  for (const t of Object.values(e.emb)) t.dispose();
 }
 
 interface Stats {
@@ -101,7 +106,7 @@ function bilinear(logits: Float32Array, off: number, u: number, v: number): numb
  * Find the net post beyond one end of the band: prompt SAM with a grid of points outside the end,
  * keep the tall, solid, roughly vertical mask whose top sits near band level.
  */
-export async function findPost(e: Embedded, end: BandEnd, { cols = 10, rows = 4 } = {}): Promise<Post | null> {
+export async function findPost(e: Embedded, end: BandEnd, { cols = 10, rows = 4, batch = 8 } = {}): Promise<Post | null> {
   const { W, H } = e;
   const scale = e.reshaped[1] / W;
   const toOrig = (j: number, i: number): [number, number] => [(j * 4) / scale, (i * 4) / scale];
@@ -115,37 +120,41 @@ export async function findPost(e: Embedded, end: BandEnd, { cols = 10, rows = 4 
       if (x >= 0 && x < W && y >= 0 && y < H) prompts.push([x, y]);
     }
   }
-  const N = prompts.length;
-  if (!N) return null;
-  const input_points = new Tensor("float32", Float32Array.from(prompts.flatMap(([x, y]) => [x * scale, y * scale])), [1, N, 1, 2]);
-  const input_labels = new Tensor("int64", BigInt64Array.from(prompts.map(() => 1n)), [1, N, 1]);
-  const out = await e.seg.model({ ...e.emb, input_points, input_labels });
-  const logits = out.pred_masks.data as Float32Array;
-  const iou = out.iou_scores.data as Float32Array;
-
-  let best: { off: number; score: number } | null = null;
-  for (let n = 0; n < N; n++) {
-    for (let m = 0; m < 3; m++) {
-      const off = (n * 3 + m) * LOW * LOW;
-      const s = maskStats(logits, off, toOrig);
-      if (!s) continue;
-      const h = s.y1 - s.y0;
-      if (h < 0.06 * H || s.x1 - s.x0 > 0.35 * h || s.fill < 0.5) continue;
-      if (s.y0 < end.y - 0.08 * H || s.y0 > end.y + 0.02 * H || s.y1 < end.y + 0.05 * H) continue;
-      if (s.y1 >= H - 4) continue;
-      const score = h * s.fill * iou[n * 3 + m]!;
-      if (!best || score > best.score) best = { off, score };
+  // Decode a few prompts at a time and keep only the best mask; all at once runs out of memory on iPhone.
+  let best: { logits: Float32Array; score: number } | null = null;
+  for (let k = 0; k < prompts.length; k += batch) {
+    const chunk = prompts.slice(k, k + batch);
+    const N = chunk.length;
+    const input_points = new Tensor("float32", Float32Array.from(chunk.flatMap(([x, y]) => [x * scale, y * scale])), [1, N, 1, 2]);
+    const input_labels = new Tensor("int64", BigInt64Array.from(chunk.map(() => 1n)), [1, N, 1]);
+    const out = await e.seg.model({ ...e.emb, input_points, input_labels });
+    const all = out.pred_masks.data as Float32Array;
+    const iou = out.iou_scores.data as Float32Array;
+    for (let n = 0; n < N; n++) {
+      for (let m = 0; m < 3; m++) {
+        const off = (n * 3 + m) * LOW * LOW;
+        const s = maskStats(all, off, toOrig);
+        if (!s) continue;
+        const h = s.y1 - s.y0;
+        if (h < 0.06 * H || s.x1 - s.x0 > 0.35 * h || s.fill < 0.5) continue;
+        if (s.y0 < end.y - 0.08 * H || s.y0 > end.y + 0.02 * H || s.y1 < end.y + 0.05 * H) continue;
+        if (s.y1 >= H - 4) continue;
+        const score = h * s.fill * iou[n * 3 + m]!;
+        if (!best || score > best.score) best = { logits: all.slice(off, off + LOW * LOW), score };
+      }
     }
+    out.pred_masks.dispose();
+    out.iou_scores.dispose();
   }
   if (!best) return null;
 
-  const { off } = best;
+  const { logits } = best;
   const rowsXY: [number, number][] = [];
   for (let i = 0; i < LOW; i++) {
     let sx = 0;
     let cnt = 0;
     for (let j = 0; j < LOW; j++) {
-      if (logits[off + i * LOW + j]! > 0) {
+      if (logits[i * LOW + j]! > 0) {
         sx += j;
         cnt++;
       }
@@ -159,7 +168,7 @@ export async function findPost(e: Embedded, end: BandEnd, { cols = 10, rows = 4 
   const syy = rowsXY.reduce((a, r) => a + (r[0] - my) ** 2, 0);
   const slope = syy ? sxy / syy : 0;
   const axisX = (y: number) => mx + slope * (y - my);
-  const inside = (y: number) => bilinear(logits, off, ...toLow(axisX(y), y)) > 0;
+  const inside = (y: number) => bilinear(logits, 0, ...toLow(axisX(y), y)) > 0;
   let top = my;
   while (top > 0 && inside(top - 1)) top--;
   let base = my;
