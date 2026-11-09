@@ -1,0 +1,88 @@
+:root {
+  color-scheme: dark;
+  font-family: -apple-system, "Hiragino Sans", sans-serif;
+  background: #111;
+  color: #eee;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left));
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin: 0 0 4px;
+}
+
+.lead {
+  margin: 0 0 16px;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.pick {
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: #2a6;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.pick input {
+  display: none;
+}
+
+.status {
+  min-height: 1.4em;
+  color: #aaa;
+}
+
+.verdict {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+.verdict.ok {
+  color: #3e6;
+}
+
+.verdict.ng {
+  color: #f55;
+}
+
+.verdict small {
+  display: block;
+  font-size: 1rem;
+  color: #eee;
+}
+
+canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+
+.timings {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+}
+
+.timings td {
+  padding: 2px 12px 2px 0;
+}
+
+.timings td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
