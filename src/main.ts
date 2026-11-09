@@ -1,7 +1,7 @@
 import { drawGuide, drawPosts, verdict } from "./draw";
 import { log, logEnvironment } from "./log";
 import { analyze } from "./pipeline";
-import { loadSegmenter, type Segmenter } from "./posts";
+import { loadSegmenter, type Dtype, type Segmenter } from "./posts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const fileInput = $<HTMLInputElement>("file");
@@ -17,6 +17,10 @@ void logEnvironment();
 addEventListener("error", (e) => log("error", e.message));
 addEventListener("unhandledrejection", (e) => log("unhandledrejection", e.reason));
 
+const params = new URLSearchParams(location.search);
+// ?dtype=fp16 loads the half-precision model (for comparing memory use on devices).
+const dtype: Dtype = params.get("dtype") === "fp16" ? "fp16" : "fp32";
+
 let segmenter: Promise<{ seg: Segmenter; ms: number }> | null = null;
 
 function getSegmenter() {
@@ -24,13 +28,11 @@ function getSegmenter() {
     const t = performance.now();
     segmenter = loadSegmenter((loaded, total) => {
       if (total) status.textContent = `モデルを読み込み中… ${(loaded / 1e6).toFixed(1)} / ${(total / 1e6).toFixed(1)} MB`;
-    }).then((seg) => ({ seg, ms: performance.now() - t }));
+    }, dtype).then((seg) => ({ seg, ms: performance.now() - t }));
     segmenter.catch(() => (segmenter = null));
   }
   return segmenter;
 }
-
-const params = new URLSearchParams(location.search);
 
 async function readImage(file: Blob): Promise<ImageData> {
   const bmp = await createImageBitmap(file);
@@ -86,7 +88,7 @@ async function run(file: Blob) {
     log("判定終了", r.ok ? `中央 ${(r.center * 100).toFixed(1)} cm` : r.reason, r.timings);
 
     showTimings([
-      ["実行環境", seg.device === "webgpu" ? "WebGPU" : "WebAssembly（CPU）"],
+      ["実行環境", `${seg.device === "webgpu" ? "WebGPU" : "WebAssembly（CPU）"} · ${seg.dtype}`],
       ["モデルの準備（初回のみ）", sec(loadMs)],
       ["白帯の検出", sec(r.timings.band)],
       ["画像の解析（SlimSAM）", sec(r.timings.encode)],

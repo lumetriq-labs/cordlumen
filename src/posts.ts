@@ -14,6 +14,7 @@ export interface Segmenter {
   model: SamModel;
   processor: Awaited<ReturnType<typeof AutoProcessor.from_pretrained>>;
   device: Device;
+  dtype: Dtype;
 }
 
 export interface Embedded {
@@ -29,10 +30,15 @@ export interface BandEnd extends Pt {
   out: -1 | 1;
 }
 
-export async function loadSegmenter(onProgress?: (loaded: number, total: number) => void): Promise<Segmenter> {
+export type Dtype = "fp32" | "fp16";
+
+export async function loadSegmenter(
+  onProgress?: (loaded: number, total: number) => void,
+  dtype: Dtype = "fp32",
+): Promise<Segmenter> {
   const device: Device = "gpu" in navigator ? "webgpu" : "wasm";
   const files = new Map<string, { loaded: number; total: number }>();
-  log("モデル読み込み開始", MODEL_ID, device);
+  log("モデル読み込み開始", MODEL_ID, device, dtype);
   const progress_callback = (p: { status: string; file?: string; loaded?: number; total?: number }) => {
     if (p.status === "initiate" || p.status === "done") log(`モデルファイル ${p.status}`, p.file ?? "");
     if (p.status !== "progress" || !p.file) return;
@@ -46,11 +52,11 @@ export async function loadSegmenter(onProgress?: (loaded: number, total: number)
     onProgress?.(loaded, total);
   };
   const [model, processor] = await Promise.all([
-    SamModel.from_pretrained(MODEL_ID, { dtype: "fp32", device, progress_callback }),
+    SamModel.from_pretrained(MODEL_ID, { dtype, device, progress_callback }),
     AutoProcessor.from_pretrained(MODEL_ID, {}),
   ]);
   log("モデル読み込み完了");
-  return { model: model as SamModel, processor, device };
+  return { model: model as SamModel, processor, device, dtype };
 }
 
 export async function embed(seg: Segmenter, image: ImageData): Promise<Embedded> {

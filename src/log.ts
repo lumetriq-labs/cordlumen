@@ -7,6 +7,7 @@ export function log(...args: unknown[]) {
 
 interface GpuAdapterLike {
   limits: Record<string, number>;
+  features: { has(name: string): boolean };
   info?: { vendor?: string; architecture?: string };
 }
 
@@ -27,4 +28,5 @@ export async function logEnvironment() {
   log("WebGPU adapter", adapter.info?.vendor ?? "", adapter.info?.architecture ?? "");
   log("WebGPU maxBufferSize", MB(adapter.limits.maxBufferSize));
   log("WebGPU maxStorageBufferBindingSize", MB(adapter.limits.maxStorageBufferBindingSize));
+  log("WebGPU shader-f16", adapter.features.has("shader-f16"));
 }
