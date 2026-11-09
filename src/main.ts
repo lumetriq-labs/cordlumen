@@ -1,4 +1,4 @@
-import { drawGuide, verdict } from "./draw";
+import { drawGuide, drawPosts, verdict } from "./draw";
 import { analyze } from "./pipeline";
 import { loadSegmenter, type Segmenter } from "./posts";
 
@@ -91,6 +91,7 @@ async function run(file: Blob) {
     }
     const v = verdict(r.center);
     drawGuide(ctx, r.toImg, v, { scale: s });
+    drawPosts(ctx, r.posts, s);
     verdictEl.className = `verdict ${v.ok ? "ok" : "ng"}`;
     verdictEl.innerHTML = "";
     verdictEl.append(v.label);

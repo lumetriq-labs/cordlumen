@@ -1,4 +1,4 @@
-import { CENTER_H, SPAN, targetY, type Project } from "./measure";
+import { CENTER_H, SPAN, targetY, type Post, type Project } from "./measure";
 
 export interface Verdict {
   ok: boolean;
@@ -30,5 +30,32 @@ export function drawGuide(ctx: CanvasRenderingContext2D, toImg: Project, v: Verd
   for (let i = bottom.length - 1; i >= 0; i--) ctx.lineTo(...bottom[i]!);
   ctx.closePath();
   ctx.fill();
+  ctx.restore();
+}
+
+/** Mark each detected post with a line from base to top and a dot at both ends, in display pixels. */
+export function drawPosts(ctx: CanvasRenderingContext2D, posts: Post[], scale = 1) {
+  ctx.save();
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+  ctx.fillStyle = "#3cd2ff";
+  for (const { top, base } of posts) {
+    const [tx, ty, bx, by] = [top.x * scale, top.y * scale, base.x * scale, base.y * scale];
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(tx, ty);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+    ctx.strokeStyle = "#3cd2ff";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.lineWidth = 2;
+    for (const [x, y] of [[tx, ty], [bx, by]] as const) {
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
   ctx.restore();
 }
