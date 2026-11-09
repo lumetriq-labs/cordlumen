@@ -1,11 +1,17 @@
-import * as ort from "onnxruntime-web/wasm";
 import { log, logEnvironment } from "./log";
 
 // Untrained MobileNetV3-small + heatmap head for 4 keypoints (post tops and bases). Only for memory/speed checks.
 const MODEL_URL = "./models/post_kp_untrained.onnx";
-const IN_W = 512;
-const IN_H = 384;
 const RUNS = 5;
+
+const params = new URLSearchParams(location.search);
+const EP = params.get("ep") === "webgpu" ? "webgpu" : "wasm";
+// Fully convolutional, so any size works; keep 4:3 and multiples of 32 (the backbone stride).
+const IN_W = Math.max(32, Math.round(Number(params.get("size") ?? 512) / 32) * 32);
+const IN_H = Math.round((IN_W * 3) / 4 / 32) * 32;
+
+const ort: typeof import("onnxruntime-web/wasm") =
+  EP === "webgpu" ? await import("onnxruntime-web/webgpu") : await import("onnxruntime-web/wasm");
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const fileInput = $<HTMLInputElement>("file");
@@ -17,13 +23,17 @@ void logEnvironment();
 addEventListener("error", (e) => log("error", e.message));
 addEventListener("unhandledrejection", (e) => log("unhandledrejection", e.reason));
 
-// The plain WebAssembly build; the asyncify/JSEP builds reportedly grow memory on iOS Safari (microsoft/onnxruntime#26827).
-const prefix = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ort.env.versions.web}/dist/`;
-ort.env.wasm.wasmPaths = { mjs: `${prefix}ort-wasm-simd-threaded.mjs`, wasm: `${prefix}ort-wasm-simd-threaded.wasm` };
+if (EP === "wasm") {
+  // The plain WebAssembly build; the asyncify/JSEP builds reportedly grow memory on iOS Safari (microsoft/onnxruntime#26827).
+  const prefix = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ort.env.versions.web}/dist/`;
+  ort.env.wasm.wasmPaths = { mjs: `${prefix}ort-wasm-simd-threaded.mjs`, wasm: `${prefix}ort-wasm-simd-threaded.wasm` };
+}
+$("mode").textContent = `${EP === "webgpu" ? "GPU（WebGPU）" : "CPU（WebAssembly）"} · 入力 ${IN_W}×${IN_H}`;
+log("設定", EP, `${IN_W}x${IN_H}`, "crossOriginIsolated", crossOriginIsolated, "numThreads", ort.env.wasm.numThreads);
 
-let session: Promise<ort.InferenceSession> | null = null;
+let session: Promise<import("onnxruntime-web/wasm").InferenceSession> | null = null;
 function getSession() {
-  session ??= ort.InferenceSession.create(MODEL_URL, { executionProviders: ["wasm"] });
+  session ??= ort.InferenceSession.create(MODEL_URL, { executionProviders: [EP] });
   return session;
 }
 
@@ -63,7 +73,7 @@ function toTensor(image: ImageData) {
   return new ort.Tensor("float32", out, [1, 3, IN_H, IN_W]);
 }
 
-function argmaxPoints(t: ort.Tensor) {
+function argmaxPoints(t: import("onnxruntime-web/wasm").Tensor) {
   const [, k, h, w] = t.dims as number[];
   const d = t.data as Float32Array;
   const pts: string[] = [];
@@ -117,6 +127,8 @@ async function run(file: Blob) {
           ["縮小と変換", sec(prep)],
           ["推論（1回目）", sec(times[0]!)],
           [`推論（2〜${RUNS}回目の平均）`, sec(times.slice(1).reduce((a, b) => a + b, 0) / (RUNS - 1))],
+          ["実行先", EP === "webgpu" ? "GPU（WebGPU）" : "CPU（WebAssembly）"],
+          ["入力サイズ", `${IN_W} × ${IN_H}`],
           ["写真のサイズ", `${image.width} × ${image.height}`],
           ["出力（意味なし）", points],
         ] as [string, string][]
@@ -141,7 +153,7 @@ fileInput.addEventListener("change", () => {
   if (file) void run(file);
 });
 
-const src = new URLSearchParams(location.search).get("src");
+const src = params.get("src");
 if (src) {
   fetch(src)
     .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(`${r.status} ${src}`))))

@@ -10,6 +10,11 @@
     <main>
       <h1>cordlumen bench</h1>
       <p class="lead">学習していない小さなモデル（4点の位置を出す形）を動かし、メモリと時間を確かめるページです。結果の位置に意味はありません。</p>
+      <p id="mode" class="lead"></p>
+      <p class="lead">
+        <a href="?ep=wasm&size=512">CPU 512</a> · <a href="?ep=wasm&size=1024">CPU 1024</a> ·
+        <a href="?ep=webgpu&size=512">GPU 512</a> · <a href="?ep=webgpu&size=1024">GPU 1024</a>
+      </p>
       <label class="pick">
         写真を選ぶ
         <input id="file" type="file" accept="image/*" />
