@@ -1,4 +1,4 @@
-import { drawGuide, drawPosts, verdict } from "./draw";
+import { drawGuide, drawMeasure, drawPosts, verdict } from "./draw";
 import { loadDetector, type Detector } from "./keypoints";
 import { log, logEnvironment } from "./log";
 import { analyze } from "./pipeline";
@@ -100,7 +100,8 @@ async function run(file: Blob) {
     const v = verdict(r.center);
     drawGuide(ctx, r.toImg, v, { scale: s });
     drawPosts(ctx, r.posts, s);
-    verdictEl.className = `verdict ${v.ok ? "ok" : "ng"}`;
+    drawMeasure(ctx, r.bandLine, r.centerPt, s);
+    verdictEl.className = `verdict ${v.level}`;
     verdictEl.innerHTML = "";
     verdictEl.append(v.label);
     const sign = v.diff >= 0 ? "+" : "";

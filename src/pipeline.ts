@@ -1,7 +1,8 @@
 import { bandCandidates, fitBand, makeGray } from "./band";
 import { detectPosts, type Detector } from "./keypoints";
 import { log } from "./log";
-import { measure, type Post, type Project } from "./measure";
+import type { Pt } from "./band";
+import { measure, SPAN, type Post, type Project } from "./measure";
 
 // Below this heatmap peak a point is treated as not found. Real net photos score >= 0.74 so far, a screenshot
 // without a net scored 0.0-0.59; provisional until more negatives are checked.
@@ -13,7 +14,18 @@ export interface Timings {
 }
 
 export type Result =
-  | { ok: true; center: number; toImg: Project; posts: [Post, Post]; scores: number[]; timings: Timings }
+  | {
+      ok: true;
+      center: number;
+      toImg: Project;
+      posts: [Post, Post];
+      scores: number[];
+      /** Detected band top edge, sampled across the band, in image pixels. */
+      bandLine: Pt[];
+      /** Where the band top meets the net's centre line; its height is the result. */
+      centerPt: Pt;
+      timings: Timings;
+    }
   | { ok: false; reason: string; timings: Partial<Timings> };
 
 export async function analyze(image: ImageData, det: Detector, onStep: (label: string) => void = () => {}): Promise<Result> {
@@ -40,5 +52,21 @@ export async function analyze(image: ImageData, det: Detector, onStep: (label: s
     return { ok: false, reason: `ポスト（${which}）が見つかりませんでした`, timings };
   }
   const m = measure(bandTop, posts[0], posts[1]);
-  return { ok: true, center: m.center, toImg: m.toImg, posts, scores, timings: timings as Timings };
+  const x0 = band.xL * F;
+  const x1 = band.xR * F;
+  const bandLine = Array.from({ length: 129 }, (_, i) => {
+    const x = x0 + ((x1 - x0) * i) / 128;
+    return { x, y: bandTop(x) };
+  });
+  const [cx, cy] = m.toImg(SPAN / 2, m.center);
+  return {
+    ok: true,
+    center: m.center,
+    toImg: m.toImg,
+    posts,
+    scores,
+    bandLine,
+    centerPt: { x: cx, y: cy },
+    timings: timings as Timings,
+  };
 }

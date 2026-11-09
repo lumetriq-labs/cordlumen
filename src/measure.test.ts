@@ -44,7 +44,17 @@ describe("verdict", () => {
   });
 
   it("says low or high outside 1 cm", () => {
-    expect(verdict(0.9).label).toBe("低すぎる");
-    expect(verdict(0.93).label).toBe("高すぎる");
+    expect(verdict(0.9).label).toBe("低い");
+    expect(verdict(0.93).label).toBe("高い");
+    expect(verdict(0.88).label).toBe("低い");
+    expect(verdict(0.95).label).toBe("高い");
+  });
+
+  it("grades the guide colour at 1 cm and 3 cm", () => {
+    expect(verdict(0.92).level).toBe("ok");
+    expect(verdict(0.9).level).toBe("near");
+    expect(verdict(0.94).level).toBe("near");
+    expect(verdict(0.88).level).toBe("far");
+    expect(verdict(0.95).level).toBe("far");
   });
 });
