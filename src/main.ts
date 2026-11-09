@@ -1,7 +1,7 @@
 import { drawGuide, drawPosts, verdict } from "./draw";
+import { loadDetector, type Detector } from "./keypoints";
 import { log, logEnvironment } from "./log";
 import { analyze } from "./pipeline";
-import { loadSegmenter, type Device, type Dtype, type Segmenter } from "./posts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const fileInput = $<HTMLInputElement>("file");
@@ -18,22 +18,16 @@ addEventListener("error", (e) => log("error", e.message));
 addEventListener("unhandledrejection", (e) => log("unhandledrejection", e.reason));
 
 const params = new URLSearchParams(location.search);
-// ?dtype=fp16 loads the half-precision model (for comparing memory use on devices).
-const dtype: Dtype = params.get("dtype") === "fp16" ? "fp16" : "fp32";
-// ?device=wasm runs on the CPU with onnxruntime-web's plain WebAssembly build.
-const forceDevice: Device | undefined = params.get("device") === "wasm" ? "wasm" : undefined;
 
-let segmenter: Promise<{ seg: Segmenter; ms: number }> | null = null;
+let detector: Promise<{ det: Detector; ms: number }> | null = null;
 
-function getSegmenter() {
-  if (!segmenter) {
+function getDetector() {
+  if (!detector) {
     const t = performance.now();
-    segmenter = loadSegmenter((loaded, total) => {
-      if (total) status.textContent = `モデルを読み込み中… ${(loaded / 1e6).toFixed(1)} / ${(total / 1e6).toFixed(1)} MB`;
-    }, dtype, forceDevice).then((seg) => ({ seg, ms: performance.now() - t }));
-    segmenter.catch(() => (segmenter = null));
+    detector = loadDetector().then((det) => ({ det, ms: performance.now() - t }));
+    detector.catch(() => (detector = null));
   }
-  return segmenter;
+  return detector;
 }
 
 async function readImage(file: Blob): Promise<ImageData> {
@@ -80,9 +74,9 @@ async function run(file: Blob) {
     bmp.close();
 
     status.textContent = "モデルを準備中…";
-    const { seg, ms: loadMs } = await getSegmenter();
+    const { det, ms: loadMs } = await getDetector();
     const t = performance.now();
-    const r = await analyze(image, seg, (label) => {
+    const r = await analyze(image, det, (label) => {
       log(label);
       status.textContent = label;
     });
@@ -90,13 +84,13 @@ async function run(file: Blob) {
     log("判定終了", r.ok ? `中央 ${(r.center * 100).toFixed(1)} cm` : r.reason, r.timings);
 
     showTimings([
-      ["実行環境", `${seg.device === "webgpu" ? "WebGPU" : "WebAssembly（CPU）"} · ${seg.dtype}`],
+      ["実行環境", "WebAssembly（CPU）"],
       ["モデルの準備（初回のみ）", sec(loadMs)],
       ["白帯の検出", sec(r.timings.band)],
-      ["画像の解析（SlimSAM）", sec(r.timings.encode)],
-      ["ポストの切り抜き", sec(r.timings.posts)],
+      ["ポストの検出", sec(r.timings.posts)],
       ["判定の合計", sec(total)],
       ["写真のサイズ", `${image.width} × ${image.height}`],
+      ...(r.ok ? ([["ポストの確信度", r.scores.map((s) => s.toFixed(2)).join(" / ")]] as [string, string][]) : []),
     ]);
 
     if (!r.ok) {

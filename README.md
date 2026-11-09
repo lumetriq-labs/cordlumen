@@ -9,12 +9,12 @@ Pick a photo that shows the whole net, down to the base of both posts. Cordlumen
 ## How it works
 
 1. **Band** — the top edge of the white band is found column by column (a step up in whiteness with net mesh below it) and fitted as a chain of quadratic segments, since the centre strap puts a kink in it.
-2. **Posts** — [SlimSAM](https://huggingface.co/Xenova/slimsam-77-uniform) is prompted with a grid of points outside each end of the band; the tall, solid, vertical mask whose top sits near band level is taken as the post, giving its top and base.
+2. **Posts** — a small keypoint model (MobileNetV3-small with a heatmap head, trained on real photos and Blender renders) gives the top and base of each post from the photo letterboxed to 512×384.
 3. **Height** — the post tops (cord at 1.07 m) and bases (0 m), 12.80 m apart, define a homography of the net plane (ITF Rules of Tennis, Rule 1). The band's top edge at the plane's centre line gives the centre height.
 
-Everything runs on the device with [Transformers.js](https://huggingface.co/docs/transformers.js) (WebGPU when available, otherwise WebAssembly). The model (about 38 MB) is downloaded from Hugging Face on first use and cached by the browser. Photos are not sent anywhere.
+Everything runs on the device with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/) on plain WebAssembly. The model (about 4 MB) is served with the app. Photos are not sent anywhere.
 
-WebGPU on iPhone needs iOS 26 (Safari 26) or later.
+The earlier SlimSAM version is kept at the `slimsam` tag.
 
 ## Development
 
