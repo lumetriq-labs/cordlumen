@@ -8,11 +8,11 @@ Pick a photo that shows the whole net, down to the base of both posts. Cordlumen
 
 ## How it works
 
-1. **Band** — the top edge of the white band is found column by column (a step up in whiteness with net mesh below it) and fitted as a chain of quadratic segments, since the centre strap puts a kink in it.
-2. **Posts** — a small keypoint model (MobileNetV3-small with a heatmap head, trained on real photos and Blender renders) gives the top and base of each post from the photo letterboxed to 512×384.
+1. **Posts** — a small keypoint model (MobileNetV3-small with a heatmap head, trained on real photos and Blender renders) gives the top and base of each post from the photo letterboxed to 512×384. A second model then refines each point from a full-resolution crop around it (half the post length square, resized to 192×192).
+2. **Band** — between the posts, where the net can be, the top edge of the white band is found column by column (a step up in whiteness with net mesh below it) and fitted as two quadratics that meet at the centre strap and run out to the post tops, so a slack net is followed too.
 3. **Height** — the post tops (cord at 1.07 m) and bases (0 m), 12.80 m apart, define a homography of the net plane (ITF Rules of Tennis, Rule 1). The band's top edge at the plane's centre line gives the centre height.
 
-Everything runs on the device with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/) on plain WebAssembly. The model (about 4 MB) is served with the app. Photos are not sent anywhere.
+Everything runs on the device with [ONNX Runtime Web](https://onnxruntime.ai/docs/tutorials/web/) on plain WebAssembly. The two models (about 4 MB and 1 MB) are served with the app. Photos are not sent anywhere.
 
 The earlier SlimSAM version is kept at the `slimsam` tag.
 

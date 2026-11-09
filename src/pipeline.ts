@@ -31,9 +31,10 @@ export type Result =
 export async function analyze(image: ImageData, det: Detector, onStep: (label: string) => void = () => {}): Promise<Result> {
   onStep("ポストを探しています…");
   let t = performance.now();
-  const { posts, scores } = await detectPosts(det, image);
+  const { posts, coarse, scores } = await detectPosts(det, image);
   const timings: Partial<Timings> = { posts: performance.now() - t };
-  log("ポスト", JSON.stringify(posts), "scores", scores.map((s) => s.toFixed(2)).join(" "));
+  log("ポスト（1段階目）", JSON.stringify(coarse), "scores", scores.map((s) => s.toFixed(2)).join(" "));
+  log("ポスト（2段階目）", JSON.stringify(posts));
   const leftOk = Math.min(scores[0]!, scores[1]!) >= MIN_SCORE;
   const rightOk = Math.min(scores[2]!, scores[3]!) >= MIN_SCORE;
   if (!leftOk || !rightOk) {

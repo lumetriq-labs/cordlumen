@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decode, IN_H, IN_W, letterbox } from "./keypoints";
+import { cropBox, decode, IN_H, IN_W, letterbox } from "./keypoints";
 
 describe("letterbox", () => {
   it("fits a 4:3 photo exactly", () => {
@@ -38,5 +38,25 @@ describe("decode", () => {
     data[10 * hw + 21] = 1;
     const [p] = decode(data, 1, hh, hw);
     expect(p!.x).toBeCloseTo((20.5 + 0.5) * 8);
+  });
+
+  it("reads a chosen channel at the refine stride", () => {
+    const n = 48;
+    const data = new Float32Array(2 * n * n);
+    data[n * n + 5 * n + 7] = 1;
+    const [p] = decode(data, 1, n, n, 4, [1]);
+    expect(p!.x).toBeCloseTo((7 + 0.5) * 4);
+    expect(p!.y).toBeCloseTo((5 + 0.5) * 4);
+  });
+});
+
+describe("cropBox", () => {
+  it("centres a square of half the post length on the point", () => {
+    const b = cropBox({ x: 1000, y: 500 }, 400);
+    expect(b).toEqual({ x0: 900, y0: 400, side: 200 });
+  });
+
+  it("keeps a minimum size for tiny posts", () => {
+    expect(cropBox({ x: 100, y: 100 }, 10).side).toBe(32);
   });
 });
