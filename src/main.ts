@@ -1,7 +1,7 @@
 import { drawGuide, drawPosts, verdict } from "./draw";
 import { log, logEnvironment } from "./log";
 import { analyze } from "./pipeline";
-import { loadSegmenter, type Dtype, type Segmenter } from "./posts";
+import { loadSegmenter, type Device, type Dtype, type Segmenter } from "./posts";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const fileInput = $<HTMLInputElement>("file");
@@ -20,6 +20,8 @@ addEventListener("unhandledrejection", (e) => log("unhandledrejection", e.reason
 const params = new URLSearchParams(location.search);
 // ?dtype=fp16 loads the half-precision model (for comparing memory use on devices).
 const dtype: Dtype = params.get("dtype") === "fp16" ? "fp16" : "fp32";
+// ?device=wasm runs on the CPU with onnxruntime-web's plain WebAssembly build.
+const forceDevice: Device | undefined = params.get("device") === "wasm" ? "wasm" : undefined;
 
 let segmenter: Promise<{ seg: Segmenter; ms: number }> | null = null;
 
@@ -28,7 +30,7 @@ function getSegmenter() {
     const t = performance.now();
     segmenter = loadSegmenter((loaded, total) => {
       if (total) status.textContent = `モデルを読み込み中… ${(loaded / 1e6).toFixed(1)} / ${(total / 1e6).toFixed(1)} MB`;
-    }, dtype).then((seg) => ({ seg, ms: performance.now() - t }));
+    }, dtype, forceDevice).then((seg) => ({ seg, ms: performance.now() - t }));
     segmenter.catch(() => (segmenter = null));
   }
   return segmenter;

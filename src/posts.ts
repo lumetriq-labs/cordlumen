@@ -1,4 +1,4 @@
-import { AutoProcessor, RawImage, SamModel, Tensor } from "@huggingface/transformers";
+import { AutoProcessor, env, RawImage, SamModel, Tensor } from "@huggingface/transformers";
 import type { Pt } from "./band";
 import { log } from "./log";
 import type { Post } from "./measure";
@@ -8,7 +8,7 @@ export const MODEL_ID = "Xenova/slimsam-77-uniform";
 // SAM's low-resolution mask logits: 256x256 over the 1024px padded input.
 const LOW = 256;
 
-type Device = "webgpu" | "wasm";
+export type Device = "webgpu" | "wasm";
 
 export interface Segmenter {
   model: SamModel;
@@ -32,13 +32,27 @@ export interface BandEnd extends Pt {
 
 export type Dtype = "fp32" | "fp16";
 
+/**
+ * Switch onnxruntime-web to its plain WebAssembly build. Transformers.js defaults to the asyncify build, which
+ * reportedly keeps growing memory on iOS Safari (microsoft/onnxruntime#26827).
+ */
+function usePlainWasm() {
+  const onnx = env.backends.onnx;
+  const version = onnx.versions?.web;
+  if (!onnx.wasm || !version) return;
+  const prefix = `https://cdn.jsdelivr.net/npm/onnxruntime-web@${version}/dist/`;
+  onnx.wasm.wasmPaths = { mjs: `${prefix}ort-wasm-simd-threaded.mjs`, wasm: `${prefix}ort-wasm-simd-threaded.wasm` };
+}
+
 export async function loadSegmenter(
   onProgress?: (loaded: number, total: number) => void,
   dtype: Dtype = "fp32",
+  forceDevice?: Device,
 ): Promise<Segmenter> {
-  const device: Device = "gpu" in navigator ? "webgpu" : "wasm";
+  const device: Device = forceDevice ?? ("gpu" in navigator ? "webgpu" : "wasm");
+  if (forceDevice === "wasm") usePlainWasm();
   const files = new Map<string, { loaded: number; total: number }>();
-  log("モデル読み込み開始", MODEL_ID, device, dtype);
+  log("モデル読み込み開始", MODEL_ID, device, dtype, JSON.stringify(env.backends.onnx.wasm?.wasmPaths ?? null));
   const progress_callback = (p: { status: string; file?: string; loaded?: number; total?: number }) => {
     if (p.status === "initiate" || p.status === "done") log(`モデルファイル ${p.status}`, p.file ?? "");
     if (p.status !== "progress" || !p.file) return;
