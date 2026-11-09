@@ -27,18 +27,14 @@ function getSegmenter() {
 }
 
 const params = new URLSearchParams(location.search);
-// Long side the photo is reduced to before analysis. Full-size photos run out of memory on iPhone.
-const MAX_SIDE = Number(params.get("max")) || 2016;
 
 async function readImage(file: Blob): Promise<ImageData> {
   const bmp = await createImageBitmap(file);
-  const s = Math.min(1, MAX_SIDE / Math.max(bmp.width, bmp.height));
   const c = document.createElement("canvas");
-  c.width = Math.round(bmp.width * s);
-  c.height = Math.round(bmp.height * s);
+  c.width = bmp.width;
+  c.height = bmp.height;
   const ctx = c.getContext("2d")!;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(bmp, 0, 0, c.width, c.height);
+  ctx.drawImage(bmp, 0, 0);
   bmp.close();
   const data = ctx.getImageData(0, 0, c.width, c.height);
   c.width = c.height = 0;
@@ -86,7 +82,7 @@ async function run(file: Blob) {
       ["画像の解析（SlimSAM）", sec(r.timings.encode)],
       ["ポストの切り抜き", sec(r.timings.posts)],
       ["判定の合計", sec(total)],
-      ["解析したサイズ", `${image.width} × ${image.height}`],
+      ["写真のサイズ", `${image.width} × ${image.height}`],
     ]);
 
     if (!r.ok) {
