@@ -1,4 +1,5 @@
 import { bandCandidates, fitBand, makeGray } from "./band";
+import { log } from "./log";
 import { measure, type Post, type Project } from "./measure";
 import { embed, findPost, release, type Segmenter } from "./posts";
 
@@ -19,6 +20,7 @@ export async function analyze(image: ImageData, seg: Segmenter, onStep: (label: 
   const g = makeGray(image, image.width > 2500 ? 2 : 1);
   const band = fitBand(bandCandidates(g), g);
   const timings: Partial<Timings> = { band: performance.now() - t };
+  log("白帯", band ? `検出 x=${band.xL * g.factor}..${band.xR * g.factor}` : "なし");
   if (!band) return { ok: false, reason: "ネットの白帯が見つかりませんでした", timings };
   const F = g.factor;
   const bandTop = (u: number) => band.f(u / F) * F;
@@ -32,7 +34,9 @@ export async function analyze(image: ImageData, seg: Segmenter, onStep: (label: 
   t = performance.now();
   try {
     const left = await findPost(e, { x: band.xL * F, y: bandTop(band.xL * F), out: -1 });
+    log("左ポスト", left ? "検出" : "なし");
     const right = await findPost(e, { x: band.xR * F, y: bandTop(band.xR * F), out: 1 });
+    log("右ポスト", right ? "検出" : "なし");
     timings.posts = performance.now() - t;
     if (!left || !right) {
       const which = !left && !right ? "両方" : !left ? "左" : "右";

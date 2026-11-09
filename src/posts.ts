@@ -1,5 +1,6 @@
 import { AutoProcessor, RawImage, SamModel, Tensor } from "@huggingface/transformers";
 import type { Pt } from "./band";
+import { log } from "./log";
 import type { Post } from "./measure";
 
 export const MODEL_ID = "Xenova/slimsam-77-uniform";
@@ -31,7 +32,9 @@ export interface BandEnd extends Pt {
 export async function loadSegmenter(onProgress?: (loaded: number, total: number) => void): Promise<Segmenter> {
   const device: Device = "gpu" in navigator ? "webgpu" : "wasm";
   const files = new Map<string, { loaded: number; total: number }>();
+  log("モデル読み込み開始", MODEL_ID, device);
   const progress_callback = (p: { status: string; file?: string; loaded?: number; total?: number }) => {
+    if (p.status === "initiate" || p.status === "done") log(`モデルファイル ${p.status}`, p.file ?? "");
     if (p.status !== "progress" || !p.file) return;
     files.set(p.file, { loaded: p.loaded ?? 0, total: p.total ?? 0 });
     let loaded = 0;
@@ -46,13 +49,16 @@ export async function loadSegmenter(onProgress?: (loaded: number, total: number)
     SamModel.from_pretrained(MODEL_ID, { dtype: "fp32", device, progress_callback }),
     AutoProcessor.from_pretrained(MODEL_ID, {}),
   ]);
+  log("モデル読み込み完了");
   return { model: model as SamModel, processor, device };
 }
 
 export async function embed(seg: Segmenter, image: ImageData): Promise<Embedded> {
   const raw = new RawImage(image.data, image.width, image.height, 4).rgb();
   const inputs = await seg.processor(raw);
+  log("前処理完了 → エンコーダ実行", inputs.pixel_values.dims.join("x"));
   const emb = await seg.model.get_image_embeddings(inputs);
+  log("エンコーダ完了");
   inputs.pixel_values.dispose();
   return { seg, emb, reshaped: inputs.reshaped_input_sizes[0], W: image.width, H: image.height };
 }

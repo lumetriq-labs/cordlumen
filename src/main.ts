@@ -1,4 +1,5 @@
 import { drawGuide, drawPosts, verdict } from "./draw";
+import { log, logEnvironment } from "./log";
 import { analyze } from "./pipeline";
 import { loadSegmenter, type Segmenter } from "./posts";
 
@@ -12,6 +13,9 @@ const timingsEl = $<HTMLTableElement>("timings");
 const DISPLAY_W = 1600;
 
 $("build").textContent = `${__BUILD_ID__} · ${__BUILD_TIME__}`;
+void logEnvironment();
+addEventListener("error", (e) => log("error", e.message));
+addEventListener("unhandledrejection", (e) => log("unhandledrejection", e.reason));
 
 let segmenter: Promise<{ seg: Segmenter; ms: number }> | null = null;
 
@@ -59,8 +63,10 @@ async function run(file: Blob) {
   verdictEl.hidden = true;
   timingsEl.hidden = true;
   try {
+    log("判定開始", file.type, `${(file.size / 1e6).toFixed(1)} MB`);
     status.textContent = "写真を読み込み中…";
     const image = await readImage(file);
+    log("写真の読み込み完了", `${image.width}x${image.height}`);
     const s = Math.min(1, DISPLAY_W / image.width);
     view.width = Math.round(image.width * s);
     view.height = Math.round(image.height * s);
@@ -72,8 +78,12 @@ async function run(file: Blob) {
     status.textContent = "モデルを準備中…";
     const { seg, ms: loadMs } = await getSegmenter();
     const t = performance.now();
-    const r = await analyze(image, seg, (label) => (status.textContent = label));
+    const r = await analyze(image, seg, (label) => {
+      log(label);
+      status.textContent = label;
+    });
     const total = performance.now() - t;
+    log("判定終了", r.ok ? `中央 ${(r.center * 100).toFixed(1)} cm` : r.reason, r.timings);
 
     showTimings([
       ["実行環境", seg.device === "webgpu" ? "WebGPU" : "WebAssembly（CPU）"],
@@ -104,6 +114,7 @@ async function run(file: Blob) {
     verdictEl.hidden = false;
     status.textContent = "";
   } catch (err) {
+    log("例外", err);
     console.error(err);
     status.textContent = `エラー: ${err instanceof Error ? err.message : String(err)}`;
   }
