@@ -1,7 +1,8 @@
 import { log, logEnvironment } from "./log";
 
 // Untrained MobileNetV3-small + heatmap head for 4 keypoints (post tops and bases). Only for memory/speed checks.
-const MODEL_URL = "./models/post_kp_untrained.onnx";
+// Same file name across deploys and Pages allows caching for 10 minutes, so tie the URL to the build.
+const MODEL_URL = `./models/post_kp_untrained.onnx?v=${__BUILD_ID__}`;
 const RUNS = 5;
 
 const params = new URLSearchParams(location.search);
