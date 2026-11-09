@@ -12,6 +12,11 @@ const buildTime = new Date().toLocaleString("ja-JP", {
 export default defineConfig({
   // Relative asset URLs so the build works under the GitHub Pages sub-path (/cordlumen/).
   base: "./",
+  build: {
+    rollupOptions: {
+      input: { main: "index.html", bench: "bench.html" },
+    },
+  },
   define: {
     __BUILD_ID__: JSON.stringify(buildId),
     __BUILD_TIME__: JSON.stringify(buildTime),
