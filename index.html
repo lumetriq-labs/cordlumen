@@ -29,8 +29,14 @@
         <p id="menuError" class="menu-error" hidden></p>
         <h2 class="list-head">使い方</h2>
         <div class="list">
-          <a class="item" href="./about.html#legend"><span class="ico orange">!</span>判定の見かた<span class="chev" aria-hidden="true">›</span></a>
-          <a class="item" href="./about.html#tips"><span class="ico gray">?</span>精度が出やすい撮り方<span class="chev" aria-hidden="true">›</span></a>
+          <a class="item" href="#legend"><span class="ico orange">!</span>判定の見かた<span class="chev" aria-hidden="true">›</span></a>
+          <a class="item" href="#tips"><span class="ico blue">?</span>精度が出やすい撮り方<span class="chev" aria-hidden="true">›</span></a>
+          <a class="item" href="#trouble"><span class="ico red">×</span>測れなかったとき<span class="chev" aria-hidden="true">›</span></a>
+        </div>
+        <h2 class="list-head">そのほか</h2>
+        <div class="list">
+          <a class="item" href="#privacy"><span class="ico gray">i</span>写真の扱い<span class="chev" aria-hidden="true">›</span></a>
+          <a class="item" href="#terms"><span class="ico gray">※</span>ご利用にあたって<span class="chev" aria-hidden="true">›</span></a>
         </div>
         <p class="list-foot">判定は写真から推定した目安です。正確な高さはメジャーで確かめてください。</p>
       </nav>
@@ -38,9 +44,9 @@
       <p id="liveHint" class="live-hint" hidden>横向きに構えて、両方のポストを上の端から根元まで入れてください。</p>
       <div class="live-frame" aria-hidden="true"></div>
       <button id="liveStop" class="live-stop" type="button" aria-label="停止"><span></span></button>
-      <section id="result" class="result" hidden>
+      <section id="result" class="result" data-screen="result" hidden>
         <header class="nav">
-          <button id="back" class="nav-back" type="button">‹ 戻る</button>
+          <button class="nav-back" type="button">‹ 戻る</button>
           <h1 class="nav-title">判定結果</h1>
         </header>
         <p id="status" class="status"></p>
@@ -50,6 +56,75 @@
         <table id="timings" class="timings" hidden>
           <tbody></tbody>
         </table>
+      </section>
+
+      <section class="page" data-screen="legend" hidden>
+        <header class="nav">
+          <button class="nav-back" type="button">‹ 戻る</button>
+          <h1 class="nav-title">判定の見かた</h1>
+        </header>
+        <div class="doc">
+          <p>ネット中央の高さは、ルールで <strong>91.4 cm</strong> と決まっています（ITF テニス規則 第1条）。</p>
+          <ul class="legend">
+            <li><span class="mark ok">ぴったり</span>91.4 cm との差が 1 cm 以内</li>
+            <li><span class="mark near">低い／高い</span>差が 3 cm 以内</li>
+            <li><span class="mark far">低い／高い</span>差が 3 cm より大きい</li>
+          </ul>
+          <p>写真の上には、91.4 cm の高さを帯で重ねて表示します。白帯がその帯からどれだけずれているかで、どちらに直せばよいかが分かります。</p>
+        </div>
+      </section>
+
+      <section class="page" data-screen="tips" hidden>
+        <header class="nav">
+          <button class="nav-back" type="button">‹ 戻る</button>
+          <h1 class="nav-title">精度が出やすい撮り方</h1>
+        </header>
+        <div class="doc">
+          <ul>
+            <li><strong>両方のポストを、上の端から根元まで全部写す。</strong>どこかが人や物で隠れていると、精度が大きく下がります。</li>
+            <li><strong>ポストのそばに人がいないときに撮る。</strong>人がポストの横に立っていると、ポストや白帯を見まちがえやすくなります。</li>
+            <li><strong>ネットから 9 m くらい離れて撮る。</strong>ベースラインのあたりが目安です。近すぎると精度が下がります。</li>
+            <li><strong>なるべく正面寄りから撮る。</strong>斜めからでも測れますが、正面寄りのほうが精度が出やすくなります。</li>
+          </ul>
+          <p>カメラの高さは、ふつうに立って構える高さで大丈夫です。</p>
+        </div>
+      </section>
+
+      <section class="page" data-screen="trouble" hidden>
+        <header class="nav">
+          <button class="nav-back" type="button">‹ 戻る</button>
+          <h1 class="nav-title">測れなかったとき</h1>
+        </header>
+        <div class="doc">
+          <ul>
+            <li><strong>「ポストが見つかりませんでした」</strong>：ポストが写真の端で切れていないか、人や物で隠れていないかを確かめて、撮り直してください。</li>
+            <li><strong>「ネットの白帯が見つかりませんでした」</strong>：白帯が影や逆光で見えにくいと見つけられないことがあります。向きや時間を変えて撮り直してください。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="page" data-screen="privacy" hidden>
+        <header class="nav">
+          <button class="nav-back" type="button">‹ 戻る</button>
+          <h1 class="nav-title">写真の扱い</h1>
+        </header>
+        <div class="doc">
+          <p>写真はこの端末のブラウザの中だけで処理します。どこにも送信しません。</p>
+        </div>
+      </section>
+
+      <section class="page" data-screen="terms" hidden>
+        <header class="nav">
+          <button class="nav-back" type="button">‹ 戻る</button>
+          <h1 class="nav-title">ご利用にあたって</h1>
+        </header>
+        <div class="doc">
+          <ul>
+            <li>判定は写真から推定した目安です。写り方によっては、数 cm 以上ずれることがあります。</li>
+            <li>試合や大会で正確な高さが必要なときは、メジャーなどで実際に測って確かめてください。</li>
+            <li>この判定結果を使ったことで生じたことについて、責任は負いかねます。</li>
+          </ul>
+        </div>
       </section>
     </main>
     <footer id="build" class="build"></footer>

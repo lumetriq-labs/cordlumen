@@ -11,19 +11,26 @@ const verdictEl = $<HTMLDivElement>("verdict");
 const view = $<HTMLCanvasElement>("view");
 const timingsEl = $<HTMLTableElement>("timings");
 const menu = $<HTMLElement>("menu");
-const resultScreen = $<HTMLElement>("result");
 const menuError = $<HTMLParagraphElement>("menuError");
 
 const DISPLAY_W = 1600;
 
-// Two screens in one page: the menu, and the photo result (#result). The result is a history entry, so the
-// browser's back button and the iOS edge swipe return to the menu.
+// Screens in one page: the menu, plus one section per `data-screen` name, opened by the URL hash (#result,
+// #legend, ...). Each screen is a history entry, so the browser's back button and the iOS edge swipe return to
+// the menu. Sections carry no matching id, so the browser never scrolls to them on its own.
+const screens = [...document.querySelectorAll<HTMLElement>("[data-screen]")];
 const RESULT_HASH = "#result";
+let menuShown = false;
 
 function showScreen() {
-  const onResult = location.hash === RESULT_HASH;
-  menu.hidden = onResult;
-  resultScreen.hidden = !onResult;
+  const name = location.hash.slice(1);
+  let found = false;
+  for (const s of screens) {
+    s.hidden = s.dataset.screen !== name;
+    found ||= !s.hidden;
+  }
+  menu.hidden = found;
+  menuShown ||= !found;
   scrollTo(0, 0);
 }
 
@@ -33,10 +40,22 @@ function openResult() {
   showScreen();
 }
 
+/** Back to the menu; when a screen was opened directly (no menu entry behind it), stay on the site. */
+function goBack() {
+  if (menuShown) {
+    history.back();
+  } else {
+    history.replaceState(null, "", location.pathname + location.search);
+    showScreen();
+  }
+}
+
 // A reload on #result has no photo to show, so start from the menu.
 if (location.hash === RESULT_HASH) history.replaceState(null, "", location.pathname + location.search);
+showScreen();
 addEventListener("popstate", showScreen);
-$("back").addEventListener("click", () => history.back());
+addEventListener("hashchange", showScreen);
+for (const b of document.querySelectorAll(".nav-back")) b.addEventListener("click", goBack);
 $("again").addEventListener("click", () => fileInput.click());
 
 $("build").textContent = `${__BUILD_ID__} · ${__BUILD_TIME__}`;
