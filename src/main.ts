@@ -108,6 +108,7 @@ const errorText = (err: unknown) => (err instanceof Error ? err.message : String
 function showResult(ctx: CanvasRenderingContext2D, r: Result, s: number) {
   if (!r.ok) {
     verdictEl.hidden = true;
+    delete document.body.dataset.level;
     status.textContent = r.reason;
     return;
   }
@@ -115,16 +116,15 @@ function showResult(ctx: CanvasRenderingContext2D, r: Result, s: number) {
   drawGuide(ctx, r.toImg, v, { scale: s });
   drawPosts(ctx, r.posts, s);
   drawMeasure(ctx, r.bandLine, r.centerPt, s);
+  const el = (tag: string, className: string, textContent: string) =>
+    Object.assign(document.createElement(tag), { className, textContent });
+  const diff = `${v.diff >= 0 ? "+" : ""}${(v.diff * 100).toFixed(1)} cm`;
+  const small = el("small", "", `中央 ${(r.center * 100).toFixed(1)} cm`);
+  small.append(el("span", "v-paren", `（${diff}）`));
   verdictEl.className = `verdict ${v.level}`;
-  verdictEl.innerHTML = "";
-  verdictEl.append(v.label);
-  const sign = v.diff >= 0 ? "+" : "";
-  verdictEl.append(
-    Object.assign(document.createElement("small"), {
-      textContent: `中央 ${(r.center * 100).toFixed(1)} cm（${sign}${(v.diff * 100).toFixed(1)} cm）`,
-    }),
-  );
+  verdictEl.replaceChildren(el("span", "v-diff", diff), el("span", "v-label", v.label), small);
   verdictEl.hidden = false;
+  document.body.dataset.level = v.level;
   status.textContent = "";
 }
 
@@ -153,6 +153,7 @@ function stopLive() {
   cam.srcObject = null;
   live = null;
   document.body.classList.remove("live-on");
+  delete document.body.dataset.level;
   liveHint.hidden = true;
 }
 

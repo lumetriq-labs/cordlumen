@@ -35,7 +35,8 @@
       </nav>
       <video id="cam" playsinline muted hidden></video>
       <p id="liveHint" class="live-hint" hidden>横向きに構えて、両方のポストを上の端から根元まで入れてください。</p>
-      <button id="liveStop" class="live-stop" type="button">停止</button>
+      <div class="live-frame" aria-hidden="true"></div>
+      <button id="liveStop" class="live-stop" type="button" aria-label="停止"><span></span></button>
       <p id="status" class="status"></p>
       <div id="verdict" class="verdict" hidden></div>
       <canvas id="view"></canvas>
