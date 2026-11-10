@@ -53,10 +53,10 @@ describe("decode", () => {
 describe("cropBox", () => {
   it("centres a square of half the post length on the point", () => {
     const b = cropBox({ x: 1000, y: 500 }, 400);
-    expect(b).toEqual({ x0: 900, y0: 400, side: 200 });
+    expect(b).toEqual({ x0: 900, y0: 400, w: 200, h: 200 });
   });
 
   it("keeps a minimum size for tiny posts", () => {
-    expect(cropBox({ x: 100, y: 100 }, 10).side).toBe(32);
+    expect(cropBox({ x: 100, y: 100 }, 10).w).toBe(32);
   });
 });

@@ -1,18 +1,19 @@
 import type { InferenceSession, Tensor } from "onnxruntime-web/wasm";
 import { log } from "./log";
 import type { Post } from "./measure";
+import { resizeRegion } from "./resample";
 
 // MobileNetV3-small + heatmap head trained on real photos and Blender renders: heatmaps for left top, left base,
 // right top, right base (left/right by image x). Same file name across deploys, so tie the URL to the build.
 const MODEL_URL = `./models/post_kp.onnx?v=${__BUILD_ID__}`;
 // Stage 2: a square crop around each stage-1 point (side half the post length) gives top and base heatmaps at
-// stride 4; the channel for the crop's own point is used. Trained by .tmp_net/custom/train2.py on crops.py crops.
+// stride 4; the channel for the crop's own point is used. Trained by custom/train2.py on crops.py crops (training scripts kept outside this repo).
 const REFINE_URL = `./models/post_refine.onnx?v=${__BUILD_ID__}`;
 const CROP = 192;
 const CROP_STRIDE = 4;
 const CROP_SIDE = 0.5;
 
-// Must match training (.tmp_net/custom/train.py): letterbox into IN_W x IN_H on grey, ImageNet normalisation.
+// Must match training (custom/train.py): letterbox into IN_W x IN_H on grey, ImageNet normalisation.
 export const IN_W = 512;
 export const IN_H = 384;
 const STRIDE = 8;
@@ -55,32 +56,33 @@ export async function loadDetector(): Promise<Detector> {
   return { ort, session, refine };
 }
 
-function normalise(data: Uint8ClampedArray, out: Float32Array, offset: number, n: number) {
-  for (let i = 0; i < n; i++) {
-    for (let ch = 0; ch < 3; ch++) out[offset + ch * n + i] = (data[i * 4 + ch]! / 255 - MEAN[ch]!) / STD[ch]!;
+/** RGB bytes (w x h) into a CHW float canvas (cw x ch, starting at `offset`) with the top-left at (x, y). */
+function normalise(rgb: Uint8Array, w: number, h: number, out: Float32Array, offset: number, cw: number, ch: number, x = 0, y = 0) {
+  const n = cw * ch;
+  for (let r = 0; r < h; r++) {
+    for (let c = 0; c < w; c++) {
+      const i = (r * w + c) * 3;
+      const o = offset + (r + y) * cw + c + x;
+      for (let k = 0; k < 3; k++) out[o + k * n] = (rgb[i + k]! / 255 - MEAN[k]!) / STD[k]!;
+    }
   }
 }
 
-function toInput(ort: Ort, src: HTMLCanvasElement, lb: Letterbox) {
-  const c = document.createElement("canvas");
-  c.width = IN_W;
-  c.height = IN_H;
-  const ctx = c.getContext("2d")!;
-  ctx.fillStyle = `rgb(${PAD}, ${PAD}, ${PAD})`;
-  ctx.fillRect(0, 0, IN_W, IN_H);
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(src, Math.round(lb.ox), Math.round(lb.oy), lb.w, lb.h);
-  const { data } = ctx.getImageData(0, 0, IN_W, IN_H);
-  c.width = c.height = 0;
-  const out = new Float32Array(3 * IN_W * IN_H);
-  normalise(data, out, 0, IN_W * IN_H);
+function toInput(ort: Ort, image: ImageData, lb: Letterbox) {
+  const n = IN_W * IN_H;
+  const out = new Float32Array(3 * n);
+  for (let k = 0; k < 3; k++) out.fill((PAD / 255 - MEAN[k]!) / STD[k]!, k * n, (k + 1) * n);
+  const rgb = resizeRegion(image, 0, 0, image.width, image.height, lb.w, lb.h, PAD);
+  normalise(rgb, lb.w, lb.h, out, 0, IN_W, IN_H, Math.round(lb.ox), Math.round(lb.oy));
   return new ort.Tensor("float32", out, [1, 3, IN_H, IN_W]);
 }
 
 export interface CropBox {
   x0: number;
   y0: number;
-  side: number;
+  /** Width and height in whole pixels; they can differ by one from rounding, as in crops.py. */
+  w: number;
+  h: number;
 }
 
 /** Crop square for a point (as crops.py): centred on it, side CROP_SIDE x the post length, whole pixels. */
@@ -88,25 +90,17 @@ export function cropBox(p: { x: number; y: number }, postLength: number): CropBo
   const side = Math.max(32, CROP_SIDE * postLength);
   const x0 = Math.round(p.x - side / 2);
   const y0 = Math.round(p.y - side / 2);
-  return { x0, y0, side: Math.round(p.x - side / 2 + side) - x0 };
+  return { x0, y0, w: Math.round(p.x - side / 2 + side) - x0, h: Math.round(p.y - side / 2 + side) - y0 };
 }
 
 /** Crops (grey outside the photo) for the four points, as one [4, 3, CROP, CROP] batch. */
-function cropInput(ort: Ort, src: HTMLCanvasElement, boxes: CropBox[]) {
-  const c = document.createElement("canvas");
-  c.width = c.height = CROP;
-  const ctx = c.getContext("2d", { willReadFrequently: true })!;
-  ctx.imageSmoothingQuality = "high";
+function cropInput(ort: Ort, image: ImageData, boxes: CropBox[]) {
   const n = CROP * CROP;
   const out = new Float32Array(boxes.length * 3 * n);
   boxes.forEach((b, i) => {
-    ctx.fillStyle = `rgb(${PAD}, ${PAD}, ${PAD})`;
-    ctx.fillRect(0, 0, CROP, CROP);
-    // Source rectangles past the photo edge are clipped with the destination scaled to match (HTML drawImage).
-    ctx.drawImage(src, b.x0, b.y0, b.side, b.side, 0, 0, CROP, CROP);
-    normalise(ctx.getImageData(0, 0, CROP, CROP).data, out, i * 3 * n, n);
+    const rgb = resizeRegion(image, b.x0, b.y0, b.w, b.h, CROP, CROP, PAD);
+    normalise(rgb, CROP, CROP, out, i * 3 * n, CROP, CROP);
   });
-  c.width = c.height = 0;
   return new ort.Tensor("float32", out, [boxes.length, 3, CROP, CROP]);
 }
 
@@ -165,37 +159,30 @@ async function run(session: InferenceSession, input: Tensor) {
 type Pt = { x: number; y: number };
 
 /** Stage 2 for points in the order left top, left base, right top, right base. */
-export async function refinePoints(det: Detector, src: HTMLCanvasElement, p: Pt[]): Promise<Pt[]> {
+export async function refinePoints(det: Detector, image: ImageData, p: Pt[]): Promise<Pt[]> {
   const len = [Math.hypot(p[1]!.x - p[0]!.x, p[1]!.y - p[0]!.y), Math.hypot(p[3]!.x - p[2]!.x, p[3]!.y - p[2]!.y)];
   const boxes = p.map((q, i) => cropBox(q, len[i >> 1]!));
-  const h = await run(det.refine, cropInput(det.ort, src, boxes));
+  const h = await run(det.refine, cropInput(det.ort, image, boxes));
   const [, c, hh, hw] = h.dims;
   return boxes.map((b, i) => {
     // Crop i is a top (even i) or a base (odd i); read that channel of its own heatmaps.
     const [q] = decode(h.data.subarray(i * c! * hh! * hw!), 1, hh!, hw!, CROP_STRIDE, [i % 2]);
-    const k = b.side / CROP;
+    // One scale for both axes, as eval_predict.py.
+    const k = b.w / CROP;
     return { x: b.x0 + q!.x * k, y: b.y0 + q!.y * k };
   });
 }
 
 export async function detectPosts(det: Detector, image: ImageData): Promise<Detection> {
-  const src = document.createElement("canvas");
-  src.width = image.width;
-  src.height = image.height;
-  src.getContext("2d")!.putImageData(image, 0, 0);
-  try {
-    const lb = letterbox(image.width, image.height);
-    const h1 = await run(det.session, toInput(det.ort, src, lb));
-    const [, k, hh, hw] = h1.dims;
-    const peaks = decode(h1.data, k!, hh!, hw!);
-    const p = peaks.map(({ x, y }) => ({ x: (x - lb.ox) / lb.s, y: (y - lb.oy) / lb.s }));
-    const r = await refinePoints(det, src, p);
-    return {
-      posts: [{ top: r[0]!, base: r[1]! }, { top: r[2]!, base: r[3]! }],
-      coarse: [{ top: p[0]!, base: p[1]! }, { top: p[2]!, base: p[3]! }],
-      scores: peaks.map((q) => q.score),
-    };
-  } finally {
-    src.width = src.height = 0;
-  }
+  const lb = letterbox(image.width, image.height);
+  const h1 = await run(det.session, toInput(det.ort, image, lb));
+  const [, k, hh, hw] = h1.dims;
+  const peaks = decode(h1.data, k!, hh!, hw!);
+  const p = peaks.map(({ x, y }) => ({ x: (x - lb.ox) / lb.s, y: (y - lb.oy) / lb.s }));
+  const r = await refinePoints(det, image, p);
+  return {
+    posts: [{ top: r[0]!, base: r[1]! }, { top: r[2]!, base: r[3]! }],
+    coarse: [{ top: p[0]!, base: p[1]! }, { top: p[2]!, base: p[3]! }],
+    scores: peaks.map((q) => q.score),
+  };
 }
