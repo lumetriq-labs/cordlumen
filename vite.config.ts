@@ -17,6 +17,14 @@ export default defineConfig({
       input: { main: "index.html", about: "about.html", bench: "bench.html" },
     },
   },
+  plugins: [
+    {
+      name: "version-json",
+      generateBundle() {
+        this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ build: buildId }) });
+      },
+    },
+  ],
   define: {
     __BUILD_ID__: JSON.stringify(buildId),
     __BUILD_TIME__: JSON.stringify(buildTime),

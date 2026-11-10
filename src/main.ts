@@ -1,4 +1,5 @@
 import { drawGuide, drawMeasure, drawPosts, verdict } from "./draw";
+import { watchForUpdates } from "./freshness";
 import { loadDetector, type Detector } from "./keypoints";
 import { log, logEnvironment } from "./log";
 import { analyze, type Result } from "./pipeline";
@@ -13,6 +14,7 @@ const timingsEl = $<HTMLTableElement>("timings");
 const DISPLAY_W = 1600;
 
 $("build").textContent = `${__BUILD_ID__} · ${__BUILD_TIME__}`;
+watchForUpdates();
 void logEnvironment();
 addEventListener("error", (e) => log("error", e.message));
 addEventListener("unhandledrejection", (e) => log("unhandledrejection", e.reason));
