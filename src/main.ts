@@ -130,6 +130,7 @@ function showResult(ctx: CanvasRenderingContext2D, r: Result, s: number) {
 // judged are never read, so they are dropped.
 const liveBtn = $<HTMLButtonElement>("live");
 const cam = $<HTMLVideoElement>("cam");
+const liveHint = $<HTMLParagraphElement>("liveHint");
 interface LiveSession {
   stop: boolean;
   stream?: MediaStream;
@@ -147,6 +148,8 @@ function stopLive() {
   live = null;
   liveBtn.textContent = "カメラで測る";
   liveBtn.classList.remove("on");
+  document.body.classList.remove("live-on");
+  liveHint.hidden = true;
 }
 
 async function startLive() {
@@ -154,8 +157,11 @@ async function startLive() {
   live = session;
   liveBtn.textContent = "停止";
   liveBtn.classList.add("on");
+  document.body.classList.add("live-on");
+  liveHint.hidden = false;
   verdictEl.hidden = true;
   timingsEl.hidden = true;
+  view.width = view.height = 0;
   const work = document.createElement("canvas");
   try {
     status.textContent = "カメラを起動中…";

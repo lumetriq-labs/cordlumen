@@ -145,6 +145,94 @@ button.pick {
   background: #a33;
 }
 
+/* Live mode: the camera fills the screen and the controls sit on top of it. */
+body.live-on {
+  overflow: hidden;
+}
+
+body.live-on .top,
+body.live-on .lead,
+body.live-on label.pick,
+body.live-on .build {
+  display: none;
+}
+
+body.live-on #cam,
+body.live-on #view {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0;
+}
+
+body.live-on #cam {
+  display: block;
+  z-index: 0;
+  background: #000;
+}
+
+body.live-on #view {
+  z-index: 1;
+}
+
+body.live-on .status,
+body.live-on .verdict {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  z-index: 2;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+body.live-on .status {
+  color: #eee;
+}
+
+body.live-on .status:empty {
+  display: none;
+}
+
+.live-hint {
+  position: fixed;
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + 64px);
+  z-index: 2;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #eee;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+body.live-on .pick.live {
+  position: fixed;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+body.live-on .timings {
+  position: fixed;
+  right: max(8px, env(safe-area-inset-right));
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + 110px);
+  z-index: 2;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  font-size: 0.7rem;
+}
+
 .status {
   min-height: 1.4em;
   color: #aaa;
