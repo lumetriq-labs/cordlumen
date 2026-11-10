@@ -11,21 +11,31 @@
   </head>
   <body>
     <main>
-      <header class="top">
-        <h1>cordlumen</h1>
-        <a class="help-btn" href="./about.html" aria-label="測り方と撮り方">?</a>
-      </header>
-      <p class="lead">ネット全体（両ポストの根元まで）が写った写真を選ぶと、中央の高さを判定します。</p>
-      <p class="lead">※ 判定は写真から推定した目安です。正確な高さはメジャーで確かめてください。</p>
-      <div class="actions">
-        <label class="pick">
-          写真を選ぶ
-          <input id="file" type="file" accept="image/*" />
-        </label>
-        <button id="live" class="pick live" type="button">カメラで測る</button>
-      </div>
+      <nav class="menu">
+        <h1 class="app-title">cordlumen</h1>
+        <p class="tagline">テニスネット中央の高さが 91.4 cm になっているかを、カメラや写真から判定します。</p>
+        <h2 class="list-head">測る</h2>
+        <div class="list">
+          <button id="live" class="item" type="button">
+            <span class="ico blue"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M9 4 7.2 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3.2L15 4H9zm3 4.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z" /></svg></span>
+            カメラで測る<span class="chev" aria-hidden="true">›</span>
+          </button>
+          <label class="item">
+            <span class="ico green"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 13h16l-5-6.5-3.5 4.5-2.5-3L4 17zM8 7.5A1.5 1.5 0 1 0 8 10.5 1.5 1.5 0 0 0 8 7.5z" /></svg></span>
+            写真から測る<span class="chev" aria-hidden="true">›</span>
+            <input id="file" type="file" accept="image/*" />
+          </label>
+        </div>
+        <h2 class="list-head">使い方</h2>
+        <div class="list">
+          <a class="item" href="./about.html#legend"><span class="ico orange">!</span>判定の見かた<span class="chev" aria-hidden="true">›</span></a>
+          <a class="item" href="./about.html#tips"><span class="ico gray">?</span>精度が出やすい撮り方<span class="chev" aria-hidden="true">›</span></a>
+        </div>
+        <p class="list-foot">判定は写真から推定した目安です。正確な高さはメジャーで確かめてください。</p>
+      </nav>
       <video id="cam" playsinline muted hidden></video>
       <p id="liveHint" class="live-hint" hidden>横向きに構えて、両方のポストを上の端から根元まで入れてください。</p>
+      <button id="liveStop" class="live-stop" type="button">停止</button>
       <p id="status" class="status"></p>
       <div id="verdict" class="verdict" hidden></div>
       <canvas id="view"></canvas>

@@ -131,6 +131,7 @@ function showResult(ctx: CanvasRenderingContext2D, r: Result, s: number) {
 // Live mode: take the newest camera frame, judge it, show it, repeat. Frames that arrive while a frame is being
 // judged are never read, so they are dropped.
 const liveBtn = $<HTMLButtonElement>("live");
+const liveStopBtn = $<HTMLButtonElement>("liveStop");
 const cam = $<HTMLVideoElement>("cam");
 const liveHint = $<HTMLParagraphElement>("liveHint");
 interface LiveSession {
@@ -151,8 +152,6 @@ function stopLive() {
   live.stream?.getTracks().forEach((t) => t.stop());
   cam.srcObject = null;
   live = null;
-  liveBtn.textContent = "カメラで測る";
-  liveBtn.classList.remove("on");
   document.body.classList.remove("live-on");
   liveHint.hidden = true;
 }
@@ -160,8 +159,6 @@ function stopLive() {
 async function startLive() {
   const session: LiveSession = { stop: false };
   live = session;
-  liveBtn.textContent = "停止";
-  liveBtn.classList.add("on");
   document.body.classList.add("live-on");
   scrollTo(0, 0);
   liveHint.hidden = false;
@@ -229,7 +226,8 @@ async function startLive() {
   }
 }
 
-liveBtn.addEventListener("click", () => (live ? stopLive() : void startLive()));
+liveBtn.addEventListener("click", () => live || void startLive());
+liveStopBtn.addEventListener("click", stopLive);
 document.addEventListener("visibilitychange", () => document.hidden && stopLive());
 // iOS Safari hit-tests fixed controls against a stale offset if the page is left scrolled (e.g. after rotating).
 addEventListener("resize", () => live && scrollTo(0, 0));
