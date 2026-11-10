@@ -186,8 +186,15 @@ body.live-on .verdict {
   z-index: 2;
   margin: 0;
   padding: 8px 12px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.55);
+}
+
+body.live-on .status,
+body.live-on .verdict,
+body.live-on .live-hint,
+body.live-on .timings {
+  text-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    0 0 3px #000;
 }
 
 body.live-on .status {
@@ -206,9 +213,7 @@ body.live-on .status:empty {
   z-index: 2;
   margin: 0;
   padding: 6px 12px;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.55);
-  color: #eee;
+  color: #fff;
   font-size: 0.85rem;
   text-align: center;
 }
@@ -228,8 +233,7 @@ body.live-on .timings {
   z-index: 2;
   margin: 0;
   padding: 4px 8px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
   font-size: 0.7rem;
 }
 
