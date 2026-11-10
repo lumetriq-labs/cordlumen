@@ -1,5 +1,6 @@
 import { drawGuide, drawMeasure, drawPosts, verdict } from "./draw";
 import { watchForUpdates } from "./freshness";
+import { setupInstall } from "./install";
 import { loadDetector, type Detector } from "./keypoints";
 import { log, logEnvironment } from "./log";
 import { analyze, type Result } from "./pipeline";
@@ -60,6 +61,7 @@ $("again").addEventListener("click", () => fileInput.click());
 
 $("build").textContent = `${__BUILD_ID__} · ${__BUILD_TIME__}`;
 watchForUpdates();
+setupInstall();
 void logEnvironment();
 addEventListener("error", (e) => log("error", e.message));
 addEventListener("unhandledrejection", (e) => log("unhandledrejection", e.reason));

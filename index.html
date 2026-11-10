@@ -35,6 +35,7 @@
         </div>
         <h2 class="list-head">そのほか</h2>
         <div class="list">
+          <a id="installRow" class="item" href="#install"><span class="ico blue">＋</span>ホーム画面に追加<span class="chev" aria-hidden="true">›</span></a>
           <a class="item" href="#privacy"><span class="ico gray">i</span>写真の扱い<span class="chev" aria-hidden="true">›</span></a>
           <a class="item" href="#terms"><span class="ico gray">※</span>ご利用にあたって<span class="chev" aria-hidden="true">›</span></a>
         </div>
@@ -110,6 +111,59 @@
         </header>
         <div class="doc">
           <p>写真はこの端末のブラウザの中だけで処理します。どこにも送信しません。</p>
+        </div>
+      </section>
+
+      <section class="page" data-screen="install" hidden>
+        <header class="nav">
+          <button class="nav-back" type="button">‹ 戻る</button>
+          <h1 class="nav-title">ホーム画面に追加</h1>
+        </header>
+        <div class="doc">
+          <h2>アプリのように使えます</h2>
+          <ul class="benefits">
+            <li><span class="ico blue">＋</span>ホーム画面のアイコンからすぐ開ける</li>
+            <li><span class="ico blue">⛶</span>アドレスバーが消えて、カメラの映像を画面いっぱいに表示できる</li>
+          </ul>
+        </div>
+
+        <div id="installed" class="doc" hidden>
+          <h2>追加済みです</h2>
+          <p></p>
+        </div>
+
+        <div id="installIos" class="doc">
+          <h2>iPhone<span class="os-tag">Safari</span></h2>
+          <ol class="steps">
+            <li>
+              画面下の共有ボタンをタップ
+              <div class="mock mock-bar" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6" /></svg>
+                <span class="hl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" /></svg></span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h12v18l-6-4-6 4z" /></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="11" height="11" rx="2" /><rect x="9" y="9" width="11" height="11" rx="2" /></svg>
+              </div>
+            </li>
+            <li>
+              メニューの「ホーム画面に追加」をタップ
+              <div class="mock mock-row hl" aria-hidden="true">
+                ホーム画面に追加
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M12 8v8M8 12h8" /></svg>
+              </div>
+            </li>
+            <li>
+              右上の「追加」をタップ
+              <div class="mock mock-head" aria-hidden="true"><span class="cancel">キャンセル</span><b>ホーム画面に追加</b><span class="add">追加</span></div>
+            </li>
+          </ol>
+          <p class="note">共有ボタンが見当たらないときは、画面下の「…」から「共有」を開いてください。「Web アプリとして開く」の切り替えが出たときは、オンのままにしてください。</p>
+        </div>
+
+        <div id="installAndroid" class="doc">
+          <h2>Android<span class="os-tag">Chrome</span></h2>
+          <button id="installBtn" class="install-btn" type="button" hidden>ホーム画面に追加する</button>
+          <p class="note">ボタンが出ないときは、Chrome 右上の <b>⋮</b> から「ホーム画面に追加」または「アプリをインストール」を選んでください。</p>
         </div>
       </section>
 
