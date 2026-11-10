@@ -1,7 +1,7 @@
 import { drawGuide, drawMeasure, drawPosts, verdict } from "./draw";
 import { loadDetector, type Detector } from "./keypoints";
 import { log, logEnvironment } from "./log";
-import { analyze } from "./pipeline";
+import { analyze, type Result } from "./pipeline";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const fileInput = $<HTMLInputElement>("file");
@@ -93,35 +93,137 @@ async function run(file: Blob) {
       ...(r.ok ? ([["ポストの確信度", r.scores.map((s) => s.toFixed(2)).join(" / ")]] as [string, string][]) : []),
     ]);
 
-    if (!r.ok) {
-      status.textContent = r.reason;
-      return;
-    }
-    const v = verdict(r.center);
-    drawGuide(ctx, r.toImg, v, { scale: s });
-    drawPosts(ctx, r.posts, s);
-    drawMeasure(ctx, r.bandLine, r.centerPt, s);
-    verdictEl.className = `verdict ${v.level}`;
-    verdictEl.innerHTML = "";
-    verdictEl.append(v.label);
-    const sign = v.diff >= 0 ? "+" : "";
-    verdictEl.append(
-      Object.assign(document.createElement("small"), {
-        textContent: `中央 ${(r.center * 100).toFixed(1)} cm（${sign}${(v.diff * 100).toFixed(1)} cm）`,
-      }),
-    );
-    verdictEl.hidden = false;
-    status.textContent = "";
+    showResult(ctx, r, s);
   } catch (err) {
     log("例外", err);
     console.error(err);
-    status.textContent = `エラー: ${err instanceof Error ? err.message : String(err)}`;
+    status.textContent = `エラー: ${errorText(err)}`;
   }
 }
+
+const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
+function showResult(ctx: CanvasRenderingContext2D, r: Result, s: number) {
+  if (!r.ok) {
+    verdictEl.hidden = true;
+    status.textContent = r.reason;
+    return;
+  }
+  const v = verdict(r.center);
+  drawGuide(ctx, r.toImg, v, { scale: s });
+  drawPosts(ctx, r.posts, s);
+  drawMeasure(ctx, r.bandLine, r.centerPt, s);
+  verdictEl.className = `verdict ${v.level}`;
+  verdictEl.innerHTML = "";
+  verdictEl.append(v.label);
+  const sign = v.diff >= 0 ? "+" : "";
+  verdictEl.append(
+    Object.assign(document.createElement("small"), {
+      textContent: `中央 ${(r.center * 100).toFixed(1)} cm（${sign}${(v.diff * 100).toFixed(1)} cm）`,
+    }),
+  );
+  verdictEl.hidden = false;
+  status.textContent = "";
+}
+
+// Live mode: take the newest camera frame, judge it, show it, repeat. Frames that arrive while a frame is being
+// judged are never read, so they are dropped.
+const liveBtn = $<HTMLButtonElement>("live");
+const cam = $<HTMLVideoElement>("cam");
+interface LiveSession {
+  stop: boolean;
+  stream?: MediaStream;
+}
+let live: LiveSession | null = null;
+
+const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+/** Stops the camera at once; the loop ends at its next check. */
+function stopLive() {
+  if (!live) return;
+  live.stop = true;
+  live.stream?.getTracks().forEach((t) => t.stop());
+  cam.srcObject = null;
+  live = null;
+  liveBtn.textContent = "カメラで測る";
+  liveBtn.classList.remove("on");
+}
+
+async function startLive() {
+  const session: LiveSession = { stop: false };
+  live = session;
+  liveBtn.textContent = "停止";
+  liveBtn.classList.add("on");
+  verdictEl.hidden = true;
+  timingsEl.hidden = true;
+  const work = document.createElement("canvas");
+  try {
+    status.textContent = "カメラを起動中…";
+    // Ask for 4K from the back camera; iPhone Safari gives 3840 x 2160 (2160 x 3840 held upright).
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 3840 }, height: { ideal: 2160 } },
+    });
+    session.stream = stream;
+    if (session.stop) {
+      stream.getTracks().forEach((t) => t.stop());
+      return;
+    }
+    cam.srcObject = stream;
+    await cam.play();
+    const set = stream.getVideoTracks()[0]!.getSettings();
+    log("カメラ", `${set.width}x${set.height}`, `${set.frameRate} fps`);
+    status.textContent = "モデルを準備中…";
+    const { det } = await getDetector();
+    const wctx = work.getContext("2d", { willReadFrequently: true })!;
+    while (!session.stop) {
+      const w = cam.videoWidth;
+      const h = cam.videoHeight;
+      if (!w || !h) {
+        await nextFrame();
+        continue;
+      }
+      if (work.width !== w || work.height !== h) {
+        work.width = w;
+        work.height = h;
+      }
+      wctx.drawImage(cam, 0, 0);
+      const image = wctx.getImageData(0, 0, w, h);
+      const t = performance.now();
+      const r = await analyze(image, det);
+      const ms = performance.now() - t;
+      if (session.stop) break;
+      const s = Math.min(1, DISPLAY_W / w);
+      view.width = Math.round(w * s);
+      view.height = Math.round(h * s);
+      const ctx = view.getContext("2d")!;
+      ctx.drawImage(work, 0, 0, view.width, view.height);
+      showResult(ctx, r, s);
+      showTimings([
+        ["カメラ", `${w} × ${h}`],
+        ["1 回の判定", sec(ms)],
+      ]);
+      await nextFrame();
+    }
+  } catch (err) {
+    if (!session.stop) {
+      log("例外", err);
+      console.error(err);
+      status.textContent = `カメラ: ${errorText(err)}`;
+    }
+  } finally {
+    if (live === session) stopLive();
+    work.width = work.height = 0;
+  }
+}
+
+liveBtn.addEventListener("click", () => (live ? stopLive() : void startLive()));
+document.addEventListener("visibilitychange", () => document.hidden && stopLive());
 
 fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
   fileInput.value = "";
+  stopLive();
   if (file) void run(file);
 });
 

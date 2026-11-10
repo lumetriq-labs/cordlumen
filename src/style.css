@@ -126,6 +126,25 @@ h1 {
   display: none;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button.pick {
+  border: none;
+  font: inherit;
+}
+
+.pick.live {
+  background: #2a5d9f;
+}
+
+.pick.live.on {
+  background: #a33;
+}
+
 .status {
   min-height: 1.4em;
   color: #aaa;

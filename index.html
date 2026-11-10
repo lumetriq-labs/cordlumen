@@ -14,10 +14,14 @@
       </header>
       <p class="lead">ネット全体（両ポストの根元まで）が写った写真を選ぶと、中央の高さを判定します。</p>
       <p class="lead">※ 判定は写真から推定した目安です。正確な高さはメジャーで確かめてください。</p>
-      <label class="pick">
-        写真を選ぶ
-        <input id="file" type="file" accept="image/*" />
-      </label>
+      <div class="actions">
+        <label class="pick">
+          写真を選ぶ
+          <input id="file" type="file" accept="image/*" />
+        </label>
+        <button id="live" class="pick live" type="button">カメラで測る</button>
+      </div>
+      <video id="cam" playsinline muted hidden></video>
       <p id="status" class="status"></p>
       <div id="verdict" class="verdict" hidden></div>
       <canvas id="view"></canvas>
