@@ -201,6 +201,58 @@ h1 {
   display: none;
 }
 
+.menu-error {
+  margin: 8px 16px 0;
+  color: #ff453a;
+  font-size: 0.85rem;
+}
+
+/* Result screen: iOS-style navigation bar with a back button. */
+.nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin: 0 -8px 8px;
+}
+
+.nav-back {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  color: #0a84ff;
+  font: inherit;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.nav-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.again {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  min-height: 52px;
+  margin: 16px auto 0;
+  border: none;
+  border-radius: 12px;
+  background: #1c1c1e;
+  color: #0a84ff;
+  font: inherit;
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.again:active,
+.nav-back:active {
+  opacity: 0.6;
+}
+
 .live-stop,
 .live-frame {
   display: none;
@@ -216,8 +268,15 @@ body.live-on {
 }
 
 body.live-on .menu,
+body.live-on .nav,
+body.live-on .again,
 body.live-on .build {
   display: none;
+}
+
+/* Live mode draws into the result screen's canvas and verdict, so that layer stays on. */
+body.live-on .result {
+  display: block;
 }
 
 body.live-on #cam,

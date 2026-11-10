@@ -11,7 +11,7 @@
   </head>
   <body>
     <main>
-      <nav class="menu">
+      <nav id="menu" class="menu">
         <h1 class="app-title">cordlumen</h1>
         <p class="tagline">テニスネット中央の高さが 91.4 cm になっているかを、カメラや写真から判定します。</p>
         <h2 class="list-head">測る</h2>
@@ -26,6 +26,7 @@
             <input id="file" type="file" accept="image/*" />
           </label>
         </div>
+        <p id="menuError" class="menu-error" hidden></p>
         <h2 class="list-head">使い方</h2>
         <div class="list">
           <a class="item" href="./about.html#legend"><span class="ico orange">!</span>判定の見かた<span class="chev" aria-hidden="true">›</span></a>
@@ -37,12 +38,19 @@
       <p id="liveHint" class="live-hint" hidden>横向きに構えて、両方のポストを上の端から根元まで入れてください。</p>
       <div class="live-frame" aria-hidden="true"></div>
       <button id="liveStop" class="live-stop" type="button" aria-label="停止"><span></span></button>
-      <p id="status" class="status"></p>
-      <div id="verdict" class="verdict" hidden></div>
-      <canvas id="view"></canvas>
-      <table id="timings" class="timings" hidden>
-        <tbody></tbody>
-      </table>
+      <section id="result" class="result" hidden>
+        <header class="nav">
+          <button id="back" class="nav-back" type="button">‹ 戻る</button>
+          <h1 class="nav-title">判定結果</h1>
+        </header>
+        <p id="status" class="status"></p>
+        <div id="verdict" class="verdict" hidden></div>
+        <canvas id="view"></canvas>
+        <button id="again" class="again" type="button">別の写真で測る</button>
+        <table id="timings" class="timings" hidden>
+          <tbody></tbody>
+        </table>
+      </section>
     </main>
     <footer id="build" class="build"></footer>
     <script type="module" src="./src/main.ts"></script>

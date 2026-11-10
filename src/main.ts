@@ -10,8 +10,34 @@ const status = $<HTMLParagraphElement>("status");
 const verdictEl = $<HTMLDivElement>("verdict");
 const view = $<HTMLCanvasElement>("view");
 const timingsEl = $<HTMLTableElement>("timings");
+const menu = $<HTMLElement>("menu");
+const resultScreen = $<HTMLElement>("result");
+const menuError = $<HTMLParagraphElement>("menuError");
 
 const DISPLAY_W = 1600;
+
+// Two screens in one page: the menu, and the photo result (#result). The result is a history entry, so the
+// browser's back button and the iOS edge swipe return to the menu.
+const RESULT_HASH = "#result";
+
+function showScreen() {
+  const onResult = location.hash === RESULT_HASH;
+  menu.hidden = onResult;
+  resultScreen.hidden = !onResult;
+  scrollTo(0, 0);
+}
+
+function openResult() {
+  menuError.hidden = true;
+  if (location.hash !== RESULT_HASH) history.pushState(null, "", RESULT_HASH);
+  showScreen();
+}
+
+// A reload on #result has no photo to show, so start from the menu.
+if (location.hash === RESULT_HASH) history.replaceState(null, "", location.pathname + location.search);
+addEventListener("popstate", showScreen);
+$("back").addEventListener("click", () => history.back());
+$("again").addEventListener("click", () => fileInput.click());
 
 $("build").textContent = `${__BUILD_ID__} · ${__BUILD_TIME__}`;
 watchForUpdates();
@@ -62,6 +88,7 @@ const sec = (ms: number | undefined) => (ms === undefined ? "-" : `${(ms / 1000)
 async function run(file: Blob) {
   verdictEl.hidden = true;
   timingsEl.hidden = true;
+  view.width = view.height = 0;
   try {
     log("判定開始", file.type, `${(file.size / 1e6).toFixed(1)} MB`);
     status.textContent = "写真を読み込み中…";
@@ -219,7 +246,8 @@ async function startLive() {
     if (!session.stop) {
       log("例外", err);
       console.error(err);
-      status.textContent = `カメラ: ${errorText(err)}`;
+      menuError.textContent = `カメラを使えませんでした: ${errorText(err)}`;
+      menuError.hidden = false;
     }
   } finally {
     if (live === session) stopLive();
@@ -227,7 +255,10 @@ async function startLive() {
   }
 }
 
-liveBtn.addEventListener("click", () => live || void startLive());
+liveBtn.addEventListener("click", () => {
+  menuError.hidden = true;
+  if (!live) void startLive();
+});
 liveStopBtn.addEventListener("click", stopLive);
 document.addEventListener("visibilitychange", () => document.hidden && stopLive());
 // iOS Safari hit-tests fixed controls against a stale offset if the page is left scrolled (e.g. after rotating).
@@ -237,12 +268,15 @@ fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];
   fileInput.value = "";
   stopLive();
-  if (file) void run(file);
+  if (!file) return;
+  openResult();
+  void run(file);
 });
 
 // ?src=<image URL> analyzes that image on load (for checking on a device without picking a file).
 const src = params.get("src");
 if (src) {
+  openResult();
   fetch(src)
     .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(`${r.status} ${src}`))))
     .then(run, (err) => (status.textContent = `エラー: ${err.message}`));
