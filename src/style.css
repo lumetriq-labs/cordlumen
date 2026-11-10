@@ -151,6 +151,7 @@ body.live-on {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+  touch-action: none;
 }
 
 body.live-on .top,
