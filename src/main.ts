@@ -161,6 +161,7 @@ async function startLive() {
   liveBtn.textContent = "停止";
   liveBtn.classList.add("on");
   document.body.classList.add("live-on");
+  scrollTo(0, 0);
   liveHint.hidden = false;
   verdictEl.hidden = true;
   timingsEl.hidden = true;
@@ -228,6 +229,8 @@ async function startLive() {
 
 liveBtn.addEventListener("click", () => (live ? stopLive() : void startLive()));
 document.addEventListener("visibilitychange", () => document.hidden && stopLive());
+// iOS Safari hit-tests fixed controls against a stale offset if the page is left scrolled (e.g. after rotating).
+addEventListener("resize", () => live && scrollTo(0, 0));
 
 fileInput.addEventListener("change", () => {
   const file = fileInput.files?.[0];

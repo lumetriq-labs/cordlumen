@@ -146,8 +146,11 @@ button.pick {
 }
 
 /* Live mode: the camera fills the screen and the controls sit on top of it. */
+html:has(body.live-on),
 body.live-on {
+  height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body.live-on .top,
