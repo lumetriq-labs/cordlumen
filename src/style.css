@@ -425,6 +425,27 @@ body.live-on .timings {
   font-size: 0.7rem;
 }
 
+/* Held upright: stop button at the bottom centre (as in the iOS Camera app), hint above it, verdict below timings. */
+@media (orientation: portrait) {
+  body.live-on .live-stop {
+    top: auto;
+    right: auto;
+    left: 50%;
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + 8px);
+    transform: translateX(-50%);
+  }
+
+  body.live-on .live-hint {
+    bottom: calc(max(12px, env(safe-area-inset-bottom)) + 92px);
+    padding: 6px 16px;
+  }
+
+  body.live-on .status,
+  body.live-on .verdict {
+    top: calc(max(8px, env(safe-area-inset-top)) + 40px);
+  }
+}
+
 .status {
   min-height: 1.4em;
   color: #aaa;
