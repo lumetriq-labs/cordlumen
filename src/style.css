@@ -20,6 +20,92 @@ h1 {
   margin: 0 0 4px;
 }
 
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.help-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #2a2a2a;
+  color: #eee;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.doc {
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+.doc h1 {
+  margin: 12px 0 8px;
+}
+
+.doc section {
+  margin: 12px 0;
+  padding: 4px 16px;
+  border-radius: 10px;
+  background: #1c1c1c;
+}
+
+.doc h2 {
+  font-size: 1.05rem;
+  margin: 12px 0 4px;
+}
+
+.doc ul {
+  padding-left: 1.2em;
+}
+
+.doc li {
+  margin: 4px 0;
+}
+
+.doc .note {
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+.back {
+  color: #aaa;
+  text-decoration: none;
+}
+
+.doc ul.legend {
+  list-style: none;
+  padding: 0;
+}
+
+.legend li {
+  display: flex;
+  gap: 8px;
+}
+
+.mark {
+  flex: none;
+  width: 6.5em;
+  font-weight: bold;
+}
+
+.mark.ok {
+  color: #3e6;
+}
+
+.mark.near {
+  color: #fd3;
+}
+
+.mark.far {
+  color: #f55;
+}
+
 .lead {
   margin: 0 0 16px;
   color: #aaa;
