@@ -138,6 +138,9 @@ interface LiveSession {
 let live: LiveSession | null = null;
 
 const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+// Rest between rounds so the phone is not kept at full load (heat, battery, memory clean-up).
+const LIVE_REST_MS = 100;
 
 /** Stops the camera at once; the loop ends at its next check. */
 function stopLive() {
@@ -209,7 +212,7 @@ async function startLive() {
         ["カメラ", `${w} × ${h}`],
         ["1 回の判定", sec(ms)],
       ]);
-      await nextFrame();
+      await sleep(LIVE_REST_MS);
     }
   } catch (err) {
     if (!session.stop) {
