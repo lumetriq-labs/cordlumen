@@ -33,10 +33,69 @@ h1 {
   max-width: 560px;
 }
 
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+
 .app-title {
-  margin: 8px 4px 0;
+  margin: 0 4px;
   font-size: 2rem;
   font-weight: 800;
+}
+
+.help-btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #2c2c2e;
+  color: #fff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  color: #fff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: var(--blue);
+}
+
+.btn.secondary {
+  background: #2c2c2e;
+}
+
+.btn:active,
+.help-btn:active {
+  opacity: 0.7;
+}
+
+.btn input {
+  display: none;
 }
 
 .tagline {
@@ -117,6 +176,10 @@ h1 {
   color: #999;
   font-size: 0.8rem;
   line-height: 1.5;
+}
+
+.menu .list-foot {
+  margin: 16px 4px 20px;
 }
 
 .doc {
