@@ -23,7 +23,75 @@ const screens = [...document.querySelectorAll<HTMLElement>("[data-screen]")];
 const RESULT_HASH = "#result";
 let menuShown = false;
 
+const drawer = $<HTMLElement>("drawer");
+const drawerScrim = $<HTMLElement>("drawerScrim");
+const drawerOpenBtn = $<HTMLButtonElement>("drawerOpen");
+let drawerClosing = false;
+
+function openDrawer() {
+  if (document.body.classList.contains("drawer-open") || drawerClosing) return;
+  drawer.hidden = false;
+  drawerScrim.hidden = false;
+  drawer.setAttribute("aria-hidden", "false");
+  drawerOpenBtn.setAttribute("aria-expanded", "true");
+  // Next frame so the closed transform paints before the open class starts the slide.
+  requestAnimationFrame(() => document.body.classList.add("drawer-open"));
+}
+
+function closeDrawer() {
+  if (!document.body.classList.contains("drawer-open") || drawerClosing) return;
+  drawerClosing = true;
+  document.body.classList.remove("drawer-open");
+  drawerOpenBtn.setAttribute("aria-expanded", "false");
+  drawer.setAttribute("aria-hidden", "true");
+  const finish = (e?: TransitionEvent) => {
+    if (e && e.target !== drawer) return;
+    drawer.removeEventListener("transitionend", finish);
+    drawer.hidden = true;
+    drawerScrim.hidden = true;
+    drawerClosing = false;
+  };
+  drawer.addEventListener("transitionend", finish);
+  // Fallback if transitionend is skipped (e.g. display:none in live mode).
+  setTimeout(finish, 300);
+}
+
+drawerOpenBtn.addEventListener("click", openDrawer);
+$("drawerClose").addEventListener("click", closeDrawer);
+drawerScrim.addEventListener("click", closeDrawer);
+// Swipe left on the panel to close. Opening by edge-swipe is intentionally not wired (Safari's back gesture).
+{
+  let x0 = 0;
+  let y0 = 0;
+  let tracking = false;
+  drawer.addEventListener(
+    "touchstart",
+    (e) => {
+      const t = e.changedTouches[0];
+      if (!t) return;
+      x0 = t.clientX;
+      y0 = t.clientY;
+      tracking = true;
+    },
+    { passive: true },
+  );
+  drawer.addEventListener(
+    "touchend",
+    (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - x0;
+      const dy = t.clientY - y0;
+      if (dx < -56 && Math.abs(dx) > Math.abs(dy) * 1.2) closeDrawer();
+    },
+    { passive: true },
+  );
+}
+
 function showScreen() {
+  closeDrawer();
   const name = location.hash.slice(1);
   let found = false;
   for (const s of screens) {
@@ -51,8 +119,10 @@ function goBack() {
   }
 }
 
-// A reload on #result has no photo to show, so start from the menu.
-if (location.hash === RESULT_HASH) history.replaceState(null, "", location.pathname + location.search);
+// A reload on #result has no photo to show; #help was removed when the slide-in menu replaced that screen.
+if (location.hash === RESULT_HASH || location.hash === "#help") {
+  history.replaceState(null, "", location.pathname + location.search);
+}
 showScreen();
 addEventListener("popstate", showScreen);
 addEventListener("hashchange", showScreen);
@@ -208,6 +278,7 @@ function stopLive() {
 async function startLive() {
   const session: LiveSession = { stop: false };
   live = session;
+  closeDrawer();
   document.body.classList.add("live-on");
   scrollTo(0, 0);
   liveHint.hidden = false;

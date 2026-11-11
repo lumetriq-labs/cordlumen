@@ -36,8 +36,7 @@ h1 {
 .top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   margin-top: 8px;
 }
 
@@ -47,17 +46,17 @@ h1 {
   font-weight: 800;
 }
 
-.help-btn {
+.menu-btn {
   flex: none;
   width: 44px;
   height: 44px;
+  border: none;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background: #2c2c2e;
   color: #fff;
-  font-weight: 800;
-  text-decoration: none;
+  cursor: pointer;
 }
 
 .actions {
@@ -90,8 +89,66 @@ h1 {
 }
 
 .btn:active,
-.help-btn:active {
+.menu-btn:active {
   opacity: 0.7;
+}
+
+/* Left slide-in menu. Opened only by the 3-line button (not by an edge swipe; that would fight Safari's back gesture). */
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 21;
+  width: min(320px, 86vw);
+  padding: max(12px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #111;
+  transform: translateX(-105%);
+  transition: transform 0.22s ease;
+  -webkit-overflow-scrolling: touch;
+}
+
+.drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 4px 4px;
+}
+
+.drawer-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+body.drawer-open {
+  overflow: hidden;
+}
+
+body.drawer-open .drawer-scrim {
+  opacity: 1;
+}
+
+body.drawer-open .drawer {
+  transform: translateX(0);
+}
+
+body.live-on .drawer,
+body.live-on .drawer-scrim {
+  display: none !important;
 }
 
 .btn input {

@@ -13,8 +13,10 @@
     <main>
       <nav id="menu" class="menu">
         <header class="top">
+          <button id="drawerOpen" class="menu-btn" type="button" aria-label="メニュー" aria-expanded="false" aria-controls="drawer">
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z" /></svg>
+          </button>
           <h1 class="app-title">cordlumen</h1>
-          <a class="help-btn" href="#help" aria-label="使い方">?</a>
         </header>
         <p class="tagline">テニスネット中央の高さが 91.4 cm になっているかを、カメラや写真から判定します。</p>
         <div class="actions">
@@ -32,10 +34,13 @@
         <p class="list-foot">※ 判定は写真から推定した目安です。正確な高さはメジャーで確かめてください。</p>
       </nav>
 
-      <section class="page" data-screen="help" hidden>
-        <header class="nav">
-          <button class="nav-back" type="button">‹ 戻る</button>
-          <h1 class="nav-title">使い方</h1>
+      <div id="drawerScrim" class="drawer-scrim" hidden></div>
+      <aside id="drawer" class="drawer" hidden aria-hidden="true">
+        <header class="drawer-head">
+          <h2 class="drawer-title">メニュー</h2>
+          <button id="drawerClose" class="menu-btn" type="button" aria-label="閉じる">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M18.3 5.7 13 11l5.3 5.3-1.4 1.4L11.6 12.4 6.3 17.7 4.9 16.3 10.2 11 4.9 5.7 6.3 4.3l5.3 5.3 5.3-5.3z" /></svg>
+          </button>
         </header>
         <h2 class="list-head">測るとき</h2>
         <div class="list">
@@ -49,7 +54,7 @@
           <a class="item" href="#privacy"><span class="ico gray">i</span>写真の扱い<span class="chev" aria-hidden="true">›</span></a>
           <a class="item" href="#terms"><span class="ico gray">※</span>ご利用にあたって<span class="chev" aria-hidden="true">›</span></a>
         </div>
-      </section>
+      </aside>
       <video id="cam" playsinline muted hidden></video>
       <p id="liveHint" class="live-hint" hidden>横向きに構えて、両方のポストを上の端から根元まで入れてください。</p>
       <div class="live-frame" aria-hidden="true"></div>
