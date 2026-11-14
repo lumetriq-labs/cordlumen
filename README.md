@@ -16,6 +16,8 @@ Everything runs on the device with [ONNX Runtime Web](https://onnxruntime.ai/doc
 
 The earlier SlimSAM version is kept at the `slimsam` tag.
 
+How the post models' training data is built (real photos, Blender scenes, and known gaps against real photos) is described in [docs/training-data.md](docs/training-data.md).
+
 ## Development
 
 ```sh
